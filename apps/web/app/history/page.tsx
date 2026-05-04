@@ -14,14 +14,14 @@ export default function HistoryPage() {
   return (
     <WorkspaceShell>
       <WorkspaceTopbar
-        left={<span className="font-mono text-sm font-semibold text-[#22C55E]">video_final.srt</span>}
+        left={<span className="text-sm font-semibold text-zinc-100">Linting History</span>}
       />
 
-      <div className="min-h-screen bg-[#131314] px-6 pb-8 pt-20">
+      <div className="min-h-screen bg-[#0B0F14] px-4 pb-8 pt-20 md:px-6">
         <div className="mx-auto w-full max-w-6xl">
           <div className="mb-6 flex flex-wrap items-end justify-between gap-4">
             <div>
-              <h1 className="mb-1 text-2xl font-semibold tracking-tight text-zinc-100">Execution Log</h1>
+              <h1 className="mb-1 text-2xl font-semibold tracking-tight text-zinc-100">Linting History</h1>
               <p className="text-sm text-zinc-400">
                 Review historical linting runs, applied presets, and fixed violations across your workspace.
               </p>
@@ -30,23 +30,23 @@ export default function HistoryPage() {
               <div className="relative">
                 <span className="pointer-events-none absolute left-2 top-1/2 -translate-y-1/2 text-zinc-400">⌕</span>
                 <Input
-                  className="h-8 w-56 border-[#3d4a3d] bg-[#1c1b1c] pl-7 font-mono text-xs"
+                  className="h-8 w-48 border-[#1F2937] bg-[#0B0F14] pl-7 font-mono text-xs md:w-56"
                   placeholder="Filter by filename..."
                 />
               </div>
-              <Button size="sm" variant="outline" className="h-8 border-[#3d4a3d] bg-[#1c1b1c] text-zinc-100">
+              <Button size="sm" variant="outline" className="h-8 border-[#1F2937] bg-[#111827] text-zinc-100">
                 Last 7 Days
               </Button>
-              <Button size="sm" variant="outline" className="h-8 border-[#3d4a3d] bg-[#1c1b1c] text-zinc-100">
+              <Button size="sm" variant="outline" className="h-8 border-[#1F2937] bg-[#111827] text-zinc-100">
                 All Presets
               </Button>
             </div>
           </div>
-          <div className="overflow-hidden rounded-lg border border-[#3d4a3d] bg-[#201f20]">
+          <div className="overflow-hidden rounded-lg border border-[#1F2937] bg-[#111827]">
             <div className="overflow-x-auto">
               <table className="w-full whitespace-nowrap border-collapse text-left text-sm">
                 <thead>
-                  <tr className="border-b border-[#3d4a3d] bg-[#353436]">
+                  <tr className="border-b border-[#1F2937] bg-[#1F2937]">
                     <th className="px-4 py-3 text-[11px] uppercase tracking-wider text-zinc-400">Filename</th>
                     <th className="px-4 py-3 text-[11px] uppercase tracking-wider text-zinc-400">Platform Preset</th>
                     <th className="px-4 py-3 text-[11px] uppercase tracking-wider text-zinc-400">Date Executed</th>
@@ -56,10 +56,10 @@ export default function HistoryPage() {
                 </thead>
                 <tbody>
                   {historyRuns.map((run) => (
-                    <tr key={run.file} className="border-b border-[#353436] hover:bg-[#1c1b1c]">
+                    <tr key={run.file} className="border-b border-[#1F2937] hover:bg-[#0B0F14]">
                       <td className="px-4 py-3">
                         <div className="flex items-center gap-2">
-                          <span className={run.status === "fixed" ? "text-[#22c55e]" : "text-[#353436]"}>⬛</span>
+                          <span className={run.status === "fixed" ? "text-[#22c55e]" : "text-[#1F2937]"}>⬛</span>
                           <span className="font-mono text-sm text-zinc-100">{run.file}</span>
                         </div>
                       </td>
@@ -68,11 +68,7 @@ export default function HistoryPage() {
                           {run.presets.map((preset) => (
                             <span
                               key={preset}
-                              className={
-                                run.status === "fixed"
-                                  ? "rounded bg-[#3e495d] px-2 py-0.5 text-[10px] font-semibold text-[#aeb9d0]"
-                                  : "rounded bg-[#353436] px-2 py-0.5 text-[10px] font-semibold text-zinc-100"
-                              }
+                              className="rounded bg-[#1F2937] px-2 py-0.5 text-[10px] font-semibold text-zinc-300"
                             >
                               {preset}
                             </span>
@@ -90,7 +86,7 @@ export default function HistoryPage() {
                                   ? "#22c55e"
                                   : run.status === "review"
                                     ? "#ef4444"
-                                    : "#353436",
+                                    : "#6b7280",
                             }}
                           />
                           <span className="font-mono text-xs text-zinc-200">{run.autoFixed} Auto-fixed</span>
@@ -110,14 +106,14 @@ export default function HistoryPage() {
                         <div className="flex justify-end gap-1">
                           <button
                             type="button"
-                            className="grid size-7 place-items-center rounded hover:bg-[#353436] hover:text-[#22c55e]"
+                            className="grid size-7 place-items-center rounded hover:bg-[#1F2937] hover:text-[#22c55e]"
                             title="Re-run"
                           >
                             ↺
                           </button>
                           <button
                             type="button"
-                            className="grid size-7 place-items-center rounded text-zinc-400 hover:bg-[#353436] hover:text-zinc-100"
+                            className="grid size-7 place-items-center rounded text-zinc-400 hover:bg-[#1F2937] hover:text-zinc-100"
                             title="Download Log"
                           >
                             ↓
@@ -129,7 +125,7 @@ export default function HistoryPage() {
                 </tbody>
               </table>
             </div>
-            <div className="flex items-center justify-between border-t border-[#3d4a3d] bg-[#353436] px-4 py-3">
+            <div className="flex items-center justify-between border-t border-[#1F2937] bg-[#1F2937] px-4 py-3">
               <span className="font-mono text-xs text-zinc-400">
                 Showing 1 to {historyRuns.length} of 128 entries
               </span>
@@ -145,26 +141,26 @@ export default function HistoryPage() {
                 </button>
                 <button
                   type="button"
-                  className="grid size-7 place-items-center rounded font-mono text-xs text-zinc-100 hover:bg-[#3a393a]"
+                  className="grid size-7 place-items-center rounded font-mono text-xs text-zinc-100 hover:bg-zinc-700"
                 >
                   2
                 </button>
                 <button
                   type="button"
-                  className="grid size-7 place-items-center rounded font-mono text-xs text-zinc-100 hover:bg-[#3a393a]"
+                  className="grid size-7 place-items-center rounded font-mono text-xs text-zinc-100 hover:bg-zinc-700"
                 >
                   3
                 </button>
                 <span className="px-1 text-zinc-400">...</span>
                 <button
                   type="button"
-                  className="grid size-7 place-items-center rounded font-mono text-xs text-zinc-100 hover:bg-[#3a393a]"
+                  className="grid size-7 place-items-center rounded font-mono text-xs text-zinc-100 hover:bg-zinc-700"
                 >
                   32
                 </button>
                 <button
                   type="button"
-                  className="grid size-7 place-items-center rounded font-mono text-xs text-zinc-100 hover:bg-[#3a393a]"
+                  className="grid size-7 place-items-center rounded font-mono text-xs text-zinc-100 hover:bg-zinc-700"
                 >
                   ›
                 </button>

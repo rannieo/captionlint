@@ -2,10 +2,11 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Gauge, History, Settings, Tags, Upload } from "lucide-react";
+import { Gauge, History, LayoutDashboard, Settings, Tags, Upload } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 const navItems = [
+  { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
   { href: "/upload", label: "Upload", icon: Upload },
   { href: "/results", label: "Results", icon: Gauge },
   { href: "/history", label: "History", icon: History },

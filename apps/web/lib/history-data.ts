@@ -11,7 +11,7 @@ export type HistoryRun = {
 export const historyRuns: HistoryRun[] = [
   {
     file: "campaign_v3_final.srt",
-    presets: ["YouTube Strict"],
+    presets: ["YouTube Shorts"],
     date: "2023-10-27 14:32:01",
     autoFixed: 12,
     pending: 0,
@@ -20,7 +20,7 @@ export const historyRuns: HistoryRun[] = [
   },
   {
     file: "tiktok_promo_01.vtt",
-    presets: ["TikTok Default", "Profanity Filter"],
+    presets: ["TikTok", "Default"],
     date: "2023-10-27 11:15:44",
     autoFixed: 3,
     pending: 2,
@@ -29,7 +29,7 @@ export const historyRuns: HistoryRun[] = [
   },
   {
     file: "interview_raw_pt1.srt",
-    presets: ["Netflix Standard"],
+    presets: ["Default"],
     date: "2023-10-26 16:45:10",
     autoFixed: 0,
     pending: 0,
@@ -38,7 +38,7 @@ export const historyRuns: HistoryRun[] = [
   },
   {
     file: "webinar_series_ep4.vtt",
-    presets: ["WCAG 2.1 AA"],
+    presets: ["Instagram"],
     date: "2023-10-26 09:20:05",
     autoFixed: 45,
     pending: 0,

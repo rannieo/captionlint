@@ -7,7 +7,7 @@ import { featureFlags } from "@/lib/feature-flags";
 export const metadata: Metadata = {
   title: "CaptionLint | Fix caption issues before they go live.",
   description:
-    "The ultimate linguistic linting engine for video professionals. Catch spelling errors, sync issues, and brand vocabulary violations in milliseconds.",
+    "CaptionLint checks captions for readability, timing, and platform presets. Upload, check, fix, export.",
 };
 
 export default function Home() {
@@ -26,8 +26,8 @@ export default function Home() {
             Fix caption issues before they go live.
           </h1>
           <p className="mb-8 max-w-lg text-base leading-7 text-zinc-400 md:text-lg">
-            The ultimate linguistic linting engine for video professionals. Catch spelling errors,
-            sync issues, and brand vocabulary violations in milliseconds.
+            CaptionLint checks captions for readability, timing, and platform presets. Upload,
+            check, fix, export.
           </p>
           <div className="flex flex-col gap-4 sm:flex-row">
             {featureFlags.showCliMarketing ? (

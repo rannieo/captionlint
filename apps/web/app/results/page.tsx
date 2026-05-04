@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { WorkspaceShell } from "../_components/workspace-shell";
 import { WorkspaceTopbar } from "../_components/workspace-topbar";
-import { resultFindings, editorLines } from "../../lib/results-data";
+import { resultFindings, resultSeverityMetrics, editorLines } from "../../lib/results-data";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
@@ -16,10 +16,8 @@ export default function ResultsPage() {
       <WorkspaceTopbar
         left={
           <>
-            <span className="text-sm text-zinc-400">⬛</span>
             <span className="font-mono text-sm font-semibold text-zinc-100">video_final.srt</span>
-            <span className="mx-1 h-4 w-px bg-[#1F2937]" />
-            <span className="inline-flex rounded bg-[#1F2937] px-2 py-0.5 font-mono text-[10px] text-zinc-300">
+            <span className="hidden rounded bg-[#1F2937] px-2 py-0.5 font-mono text-[10px] text-zinc-300 sm:inline-flex">
               English (US)
             </span>
             <span className="inline-flex rounded bg-[#93000a] px-2 py-0.5 font-mono text-[10px] text-[#ffb4ab]">
@@ -28,7 +26,7 @@ export default function ResultsPage() {
           </>
         }
         rightSlot={
-          <div className="flex rounded border border-[#1F2937] bg-[#0A0A0B] p-0.5">
+          <div className="hidden rounded border border-[#1F2937] bg-[#0A0A0B] p-0.5 sm:flex">
             <Button size="xs" variant="ghost" className="bg-zinc-900 text-zinc-100">
               Lint Mode
             </Button>
@@ -39,14 +37,45 @@ export default function ResultsPage() {
         }
       />
 
-      <div className="mt-12 flex h-[calc(100vh-48px)] overflow-hidden">
-        <aside className="z-10 flex h-full w-[320px] shrink-0 flex-col border-r border-[#1E293B] bg-[#111112]">
+      {/* Severity summary bar — full width on mobile, offset on desktop */}
+      <div className="fixed left-0 right-0 top-12 z-30 flex items-center gap-4 border-b border-[#1E293B] bg-[#111112] px-4 py-3 md:left-[280px] md:gap-6 md:px-6">
+        {resultSeverityMetrics.map((metric) => {
+          const colorClass =
+            metric.severity === "ERROR"
+              ? "text-[#ef4444]"
+              : metric.severity === "WARN"
+                ? "text-[#f59e0b]"
+                : "text-[#22C55E]";
+          return (
+            <div key={metric.severity} className="flex items-center gap-2">
+              <span className={cn("font-mono text-lg font-bold tabular-nums md:text-xl", colorClass)}>
+                {metric.value}
+              </span>
+              <div>
+                <span className={cn("block text-[10px] font-semibold uppercase tracking-wider", colorClass)}>
+                  {metric.severity}
+                </span>
+                <span className="hidden text-[11px] text-zinc-500 sm:block">{metric.label}</span>
+              </div>
+            </div>
+          );
+        })}
+      </div>
+
+      {/* Main content — stacks on mobile, splits on desktop */}
+      <div className="mt-[88px] flex h-[calc(100vh-88px)] flex-col overflow-hidden md:flex-row">
+
+        {/* Findings panel — full width on mobile, fixed sidebar on desktop */}
+        <aside className="flex h-full w-full flex-col border-b border-[#1E293B] bg-[#111112] md:w-[320px] md:shrink-0 md:border-b-0 md:border-r">
           <div className="flex items-center justify-between border-b border-[#1E293B] p-4">
-            <h2 className="text-lg font-semibold tracking-tight text-zinc-100">Findings</h2>
+            <h2 className="text-base font-semibold tracking-tight text-zinc-100 md:text-lg">
+              Findings
+            </h2>
             <button type="button" className="text-zinc-400 hover:text-zinc-100" title="Filter">
               ⊟
             </button>
           </div>
+          {/* On mobile show max 2 findings then hint; desktop shows all */}
           <div className="flex-1 overflow-y-auto">
             {resultFindings.map((finding, i) => {
               const isActive = i === 0;
@@ -87,7 +116,8 @@ export default function ResultsPage() {
           </div>
         </aside>
 
-        <section className="relative flex flex-1 flex-col bg-[#0A0A0B]">
+        {/* Caption preview — hidden on mobile, visible on desktop */}
+        <section className="relative hidden flex-1 flex-col bg-[#0A0A0B] md:flex">
           <div className="flex h-10 items-center justify-between border-b border-[#1E293B] bg-[#111112] px-4">
             <div className="flex items-center gap-3 text-xs text-zinc-500">
               <button type="button" className="hover:text-zinc-100">

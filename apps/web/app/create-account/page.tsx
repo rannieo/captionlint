@@ -24,7 +24,7 @@ export default function CreateAccountPage() {
           <p className="text-2xl font-bold tracking-tight">CaptionLint</p>
         </div>
 
-        <Card className="border-[#3d4a3d] bg-[#111112]">
+        <Card className="border-[#1F2937] bg-[#111827]">
           <CardHeader className="text-center">
             <CardTitle>Create an account</CardTitle>
             <CardDescription className="text-zinc-400">
@@ -33,18 +33,18 @@ export default function CreateAccountPage() {
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="grid gap-2">
-              <Button variant="outline" className="border-[#353436] bg-[#18181B]">
+              <Button variant="outline" className="border-[#1F2937] bg-[#111827]">
                 Continue with GitHub
               </Button>
-              <Button variant="outline" className="border-[#353436] bg-[#18181B]">
+              <Button variant="outline" className="border-[#1F2937] bg-[#111827]">
                 Continue with Google
               </Button>
             </div>
 
             <div className="flex items-center gap-3 text-xs text-zinc-500">
-              <div className="h-px flex-1 bg-[#353436]" />
+              <div className="h-px flex-1 bg-[#1F2937]" />
               <span>Or use email</span>
-              <div className="h-px flex-1 bg-[#353436]" />
+              <div className="h-px flex-1 bg-[#1F2937]" />
             </div>
 
             <div className="space-y-2">
@@ -54,7 +54,7 @@ export default function CreateAccountPage() {
               <Input
                 id="full-name"
                 placeholder="Jane Doe"
-                className="border-[#353436] bg-[#0A0A0B]"
+                className="border-[#1F2937] bg-[#0B0F14]"
               />
             </div>
 
@@ -66,7 +66,7 @@ export default function CreateAccountPage() {
                 id="email"
                 type="email"
                 placeholder="jane@company.com"
-                className="border-[#353436] bg-[#0A0A0B]"
+                className="border-[#1F2937] bg-[#0B0F14]"
               />
             </div>
 
@@ -78,7 +78,7 @@ export default function CreateAccountPage() {
                 id="password"
                 type="password"
                 placeholder="Create a strong password"
-                className="border-[#353436] bg-[#0A0A0B]"
+                className="border-[#1F2937] bg-[#0B0F14]"
               />
             </div>
 

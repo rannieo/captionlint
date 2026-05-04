@@ -23,7 +23,7 @@ export default function SignInPage() {
         <div className="mb-8 text-center">
           <p className="text-2xl font-bold tracking-tight">CaptionLint</p>
         </div>
-        <Card className="border-[#3d4a3d] bg-[#111112]">
+        <Card className="border-[#1F2937] bg-[#111827]">
           <CardHeader className="text-center">
             <CardTitle>Sign in to your account</CardTitle>
             <CardDescription className="text-zinc-400">
@@ -39,7 +39,7 @@ export default function SignInPage() {
                 id="email"
                 type="email"
                 placeholder="name@company.com"
-                className="border-[#353436] bg-[#0A0A0B]"
+                className="border-[#1F2937] bg-[#0B0F14]"
               />
             </div>
             <div className="space-y-2">
@@ -55,7 +55,7 @@ export default function SignInPage() {
                 id="password"
                 type="password"
                 placeholder="••••••••"
-                className="border-[#353436] bg-[#0A0A0B]"
+                className="border-[#1F2937] bg-[#0B0F14]"
               />
             </div>
 
@@ -64,16 +64,16 @@ export default function SignInPage() {
             </Button>
 
             <div className="flex items-center gap-3 text-xs text-zinc-500">
-              <div className="h-px flex-1 bg-[#353436]" />
+              <div className="h-px flex-1 bg-[#1F2937]" />
               <span>Or continue with</span>
-              <div className="h-px flex-1 bg-[#353436]" />
+              <div className="h-px flex-1 bg-[#1F2937]" />
             </div>
 
             <div className="grid gap-2">
-              <Button variant="outline" className="border-[#353436] bg-[#18181B]">
+              <Button variant="outline" className="border-[#1F2937] bg-[#111827]">
                 Sign in with GitHub
               </Button>
-              <Button variant="outline" className="border-[#353436] bg-[#18181B]">
+              <Button variant="outline" className="border-[#1F2937] bg-[#111827]">
                 Sign in with Google
               </Button>
             </div>
