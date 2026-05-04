@@ -64,8 +64,8 @@ export const pricingPlans: PricingPlan[] = [
 export const pricingCompareRows: PricingFeatureRow[] = [
   { feature: "Syntax Highlighting", free: "check", pro: "check", team: "check" },
   { feature: "Custom Dictionaries", free: "dash", pro: "check", team: "check" },
-  { feature: "API Access", free: "dash", pro: "dash", team: "check" },
-  { feature: "CI/CD Integration", free: "dash", pro: "dash", team: "check" },
+  { feature: "History Re-fix", free: "dash", pro: "check", team: "check" },
+  { feature: "Export Downloads", free: "check", pro: "check", team: "check" },
   { feature: "Priority Support", free: "Community", pro: "Standard", team: "Priority" },
 ];
 

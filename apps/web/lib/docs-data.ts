@@ -1,7 +1,7 @@
 export type DocsSlug =
   | "quick-start"
   | "configuration"
-  | "cli-reference"
+  | "workflow-memory"
   | "linter-rules"
   | "integrations";
 
@@ -23,9 +23,8 @@ export const docsSections: DocsSection[] = [
     summary: "Get CaptionLint running in minutes with the default QA preset.",
     blocks: [
       {
-        heading: "Install CLI",
-        body: "Install CaptionLint globally or run from your project workspace.",
-        code: "pnpm dlx captionlint run ./captions.srt --preset youtube-shorts",
+        heading: "Start In The App",
+        body: "Upload SRT or VTT, choose a platform preset, and run deterministic QA.",
       },
       {
         heading: "Run Your First Lint",
@@ -58,24 +57,21 @@ export const docsSections: DocsSection[] = [
     ],
   },
   {
-    slug: "cli-reference",
-    title: "CLI Reference",
-    summary: "All command flags for linting, export, and history workflows.",
+    slug: "workflow-memory",
+    title: "Workflow Memory",
+    summary: "How History supports re-fixing captions without re-uploading the same file.",
     blocks: [
       {
-        heading: "Run",
-        body: "Analyze one file or a batch directory.",
-        code: "captionlint run ./captions --preset instagram --format json",
+        heading: "Re-fix",
+        body: "Open a previous run, choose another preset, and start a new lint run from the stored caption file.",
       },
       {
-        heading: "Fix",
-        body: "Apply safe fixes and emit a patched output file.",
-        code: "captionlint fix ./captions.srt --out ./captions.fixed.srt",
+        heading: "Download",
+        body: "Download previous fixed outputs when the browser-local run has stored an export.",
       },
       {
-        heading: "History",
-        body: "Inspect previous runs and replay with a different preset.",
-        code: "captionlint history --query product-demo --preset youtube-shorts",
+        heading: "Search",
+        body: "Find previous files by filename and filter by platform preset.",
       },
     ],
   },
@@ -105,19 +101,19 @@ export const docsSections: DocsSection[] = [
   {
     slug: "integrations",
     title: "Integrations",
-    summary: "Use CaptionLint with editors, CI pipelines, and team workflows.",
+    summary: "Future references for connecting CaptionLint to external workflows.",
     blocks: [
       {
-        heading: "Editor Integration",
-        body: "Surface warnings inline while reviewing subtitle files.",
+        heading: "Editor Integrations",
+        body: "Future phase: surface warnings inline while reviewing subtitle files.",
       },
       {
-        heading: "CI Validation",
-        body: "Fail pull requests when ERROR findings exceed policy thresholds.",
+        heading: "Automation",
+        body: "Future phase: run caption QA from repeatable external workflows.",
       },
       {
         heading: "Team Operations",
-        body: "Share lint history and standardize presets across projects.",
+        body: "Future phase: share lint history and standardize presets across teams.",
       },
     ],
   },

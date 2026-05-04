@@ -5,13 +5,13 @@ const docsLinks = [
   { href: "/docs", label: "Introduction", slug: "intro" },
   { href: "/docs/quick-start", label: "Quick Start", slug: "quick-start" },
   { href: "/docs/configuration", label: "Configuration", slug: "configuration" },
-  { href: "/docs/cli-reference", label: "CLI Reference", slug: "cli-reference" },
+  { href: "/docs/workflow-memory", label: "Workflow Memory", slug: "workflow-memory" },
   { href: "/docs/linter-rules", label: "Linter Rules", slug: "linter-rules" },
   { href: "/docs/integrations", label: "Integrations", slug: "integrations" },
 ] as const;
 
 type DocsSidebarProps = {
-  active: "intro" | "quick-start" | "configuration" | "cli-reference" | "linter-rules" | "integrations";
+  active: "intro" | "quick-start" | "configuration" | "workflow-memory" | "linter-rules" | "integrations";
 };
 
 export function DocsSidebar({ active }: DocsSidebarProps) {

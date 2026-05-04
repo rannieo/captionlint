@@ -1,159 +1,93 @@
-# Turborepo starter
+# CaptionLint
 
-This Turborepo starter is maintained by the Turborepo core team.
+CaptionLint is a focused caption QA workflow for subtitle files users already have.
 
-## Using this example
-
-Run the following command:
-
-```sh
-npx create-turbo@latest
+```txt
+Upload captions -> choose preset -> run QA -> review issues -> export
 ```
 
-## What's inside?
+The MVP is not a caption generator, transcription tool, video editor, full subtitle editor, public API, or compliance certification product.
 
-This Turborepo includes the following packages/apps:
+## Current Implementation
 
-### Apps and Packages
+This repository now includes:
 
-- `docs`: a [Next.js](https://nextjs.org/) app
-- `web`: another [Next.js](https://nextjs.org/) app
-- `@repo/ui`: a stub React component library shared by both `web` and `docs` applications
-- `@repo/eslint-config`: `eslint` configurations (includes `eslint-config-next` and `eslint-config-prettier`)
-- `@repo/typescript-config`: `tsconfig.json`s used throughout the monorepo
+- `apps/web`: Next.js App Router UI for landing, upload, results, history, vocabulary rules, settings, auth shells, and pricing.
+- `packages/shared-types`: shared CaptionLint domain types.
+- `packages/config`: CaptionLint preset configuration for Default, TikTok, Instagram, and YouTube Shorts.
+- `packages/caption-parser`: independent SRT/VTT parser and serializer.
+- `packages/lint-engine`: deterministic lint engine for readability, timing, structure, overlap, and protected-term split checks.
 
-Each package/app is 100% [TypeScript](https://www.typescriptlang.org/).
+The web app currently runs browser-local MVP linting:
 
-### Utilities
+- uploaded caption content stays in the browser
+- valid `.srt` and `.vtt` files are parsed locally
+- findings are generated deterministically from selected preset + vocabulary terms
+- safe line-break fixes can be exported as a downloaded caption file
+- history and vocabulary terms persist in browser local storage
 
-This Turborepo has some additional tools already setup for you:
+## MVP Scope
 
-- [TypeScript](https://www.typescriptlang.org/) for static type checking
-- [ESLint](https://eslint.org/) for code linting
-- [Prettier](https://prettier.io) for code formatting
+Implemented or scaffolded around the PRD:
 
-### Build
+- SRT/VTT upload flow
+- platform preset selector
+- deterministic QA run
+- PASS/WARN/ERROR result summary
+- findings list with cue focus
+- caption preview
+- export fixed file
+- Vocabulary Rules with exact protected terms
+- History search/filter and re-fix entry point
 
-To build all apps and packages, run the following command:
+Deferred until after the core workflow is stronger:
 
-With [global `turbo`](https://turborepo.dev/docs/getting-started/installation#global-installation) installed (recommended):
+- public API and API playground
+- CLI
+- team management
+- batch processing
+- compliance reports
+- advanced subtitle editing
+- transcription or generation
 
-```sh
-cd my-turborepo
-turbo build
+## Development
+
+Use `nvm` before running project commands:
+
+```bash
+source "$HOME/.nvm/nvm.sh"
+nvm use 24
+pnpm install
+pnpm dev
 ```
 
-Without global `turbo`, use your package manager:
+Common checks:
 
-```sh
-cd my-turborepo
-npx turbo build
-pnpm dlx turbo build
-pnpm exec turbo build
+```bash
+pnpm check-types
+pnpm lint
+pnpm test
+pnpm build
 ```
 
-You can build a specific package by using a [filter](https://turborepo.dev/docs/crafting-your-repository/running-tasks#using-filters):
+## Testing
 
-With [global `turbo`](https://turborepo.dev/docs/getting-started/installation#global-installation) installed:
+Unit tests currently cover:
 
-```sh
-turbo build --filter=docs
-```
+- common SRT parsing
+- WebVTT parsing
+- malformed timestamp warnings
+- SRT serialization
+- deterministic pass findings
+- CPL/CPS findings
+- overlap detection
+- protected-term split detection and safe fix application
+- preset configuration shape
 
-Without global `turbo`:
+## Design Alignment
 
-```sh
-npx turbo build --filter=docs
-pnpm exec turbo build --filter=docs
-pnpm exec turbo build --filter=docs
-```
+Use `docs/PRD.md` as the product source of truth.
 
-### Develop
+Use `docs/STITCH_SCOPE.md` to decide whether a Stitch screen is MVP, gated future work, or reference-only.
 
-To develop all apps and packages, run the following command:
-
-With [global `turbo`](https://turborepo.dev/docs/getting-started/installation#global-installation) installed (recommended):
-
-```sh
-cd my-turborepo
-turbo dev
-```
-
-Without global `turbo`, use your package manager:
-
-```sh
-cd my-turborepo
-npx turbo dev
-pnpm exec turbo dev
-pnpm exec turbo dev
-```
-
-You can develop a specific package by using a [filter](https://turborepo.dev/docs/crafting-your-repository/running-tasks#using-filters):
-
-With [global `turbo`](https://turborepo.dev/docs/getting-started/installation#global-installation) installed:
-
-```sh
-turbo dev --filter=web
-```
-
-Without global `turbo`:
-
-```sh
-npx turbo dev --filter=web
-pnpm exec turbo dev --filter=web
-pnpm exec turbo dev --filter=web
-```
-
-### Remote Caching
-
-> [!TIP]
-> Vercel Remote Cache is free for all plans. Get started today at [vercel.com](https://vercel.com/signup?utm_source=remote-cache-sdk&utm_campaign=free_remote_cache).
-
-Turborepo can use a technique known as [Remote Caching](https://turborepo.dev/docs/core-concepts/remote-caching) to share cache artifacts across machines, enabling you to share build caches with your team and CI/CD pipelines.
-
-By default, Turborepo will cache locally. To enable Remote Caching you will need an account with Vercel. If you don't have an account you can [create one](https://vercel.com/signup?utm_source=turborepo-examples), then enter the following commands:
-
-With [global `turbo`](https://turborepo.dev/docs/getting-started/installation#global-installation) installed (recommended):
-
-```sh
-cd my-turborepo
-turbo login
-```
-
-Without global `turbo`, use your package manager:
-
-```sh
-cd my-turborepo
-npx turbo login
-pnpm exec turbo login
-pnpm exec turbo login
-```
-
-This will authenticate the Turborepo CLI with your [Vercel account](https://vercel.com/docs/concepts/personal-accounts/overview).
-
-Next, you can link your Turborepo to your Remote Cache by running the following command from the root of your Turborepo:
-
-With [global `turbo`](https://turborepo.dev/docs/getting-started/installation#global-installation) installed:
-
-```sh
-turbo link
-```
-
-Without global `turbo`:
-
-```sh
-npx turbo link
-pnpm exec turbo link
-pnpm exec turbo link
-```
-
-## Useful Links
-
-Learn more about the power of Turborepo:
-
-- [Tasks](https://turborepo.dev/docs/crafting-your-repository/running-tasks)
-- [Caching](https://turborepo.dev/docs/crafting-your-repository/caching)
-- [Remote Caching](https://turborepo.dev/docs/core-concepts/remote-caching)
-- [Filtering](https://turborepo.dev/docs/crafting-your-repository/running-tasks#using-filters)
-- [Configuration Options](https://turborepo.dev/docs/reference/configuration)
-- [CLI Usage](https://turborepo.dev/docs/reference/command-line-reference)
+Visible MVP copy should avoid claims around official platform rules, legal compliance, API availability, CLI availability, broadcast workflows, batch processing, or AI generation.

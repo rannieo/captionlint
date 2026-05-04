@@ -27,9 +27,7 @@ export default function PricingPage() {
     : pricingPlans.filter((plan) => plan.id !== "team");
   const visibleCompareRows = featureFlags.showAdvancedPricingRows
     ? pricingCompareRows
-    : pricingCompareRows.filter(
-        (row) => row.feature !== "API Access" && row.feature !== "CI/CD Integration"
-      );
+    : pricingCompareRows;
 
   return (
     <PublicPageShell active="pricing" showAuthCta={false} mainClassName="pb-24">

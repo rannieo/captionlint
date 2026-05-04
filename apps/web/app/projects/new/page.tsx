@@ -21,13 +21,13 @@ export const metadata: Metadata = {
 
 const presetCards = [
   {
-    name: "Netflix Timed Text",
-    description: "Strict CPL (42), 2 lines max, and gap enforcement.",
+    name: "YouTube Shorts",
+    description: "Compact line length, 2 lines max, and readability-first timing.",
     active: true,
   },
   {
-    name: "Web Default (YT/Vimeo)",
-    description: "Relaxed CPL (60), flexible gaps, readability-first defaults.",
+    name: "Default",
+    description: "Balanced CaptionLint defaults for SRT/VTT caption QA.",
     active: false,
   },
 ];
@@ -41,7 +41,7 @@ workspace:
   target_default: "auto"
 
 linter:
-  preset: "netflix-ttal"
+  preset: "youtube-shorts"
   strict_mode: true
   rules:
     max_characters_per_line: 42
@@ -120,7 +120,7 @@ export default function NewProjectPage() {
 
             <Card className="border-[#3d4a3d] bg-[#111112]">
               <CardHeader>
-                <CardTitle>Compliance Preset</CardTitle>
+                <CardTitle>CaptionLint Preset</CardTitle>
                 <CardDescription className="text-zinc-400">
                   Choose a baseline ruleset for structural and linguistic QA.
                 </CardDescription>

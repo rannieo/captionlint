@@ -71,7 +71,7 @@ export default function OnboardingRulesetPage() {
                 <CardTitle>Brand Tokens</CardTitle>
               </CardHeader>
               <CardContent className="space-y-3 text-sm text-zinc-400">
-                <p>Protect casing and spelling for brand names.</p>
+                <p>Protect brand names and technical terms from awkward line breaks.</p>
                 <div className="flex flex-wrap gap-2">
                   {["CaptionLint", "OpenAI", "YouTube Shorts"].map((token) => (
                     <span

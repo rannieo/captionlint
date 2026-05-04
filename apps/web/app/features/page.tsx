@@ -33,19 +33,19 @@ const pipeline = [
 
 const integrations = [
   {
-    title: "VS Code Extension",
-    body: "Real-time linting while editing subtitle files locally.",
-    code: "ext install captionlint-vscode",
+    title: "Editor Review",
+    body: "Future phase: surface caption QA findings while reviewing subtitle files locally.",
+    code: "future: editor-review",
   },
   {
-    title: "GitHub Actions",
-    body: "Block merges when caption QA policies fail in pull requests.",
-    code: "uses: captionlint/action@v2",
+    title: "Automation",
+    body: "Future phase: run repeatable QA checks from external workflows.",
+    code: "future: automation",
   },
   {
-    title: "GitLab CI/CD",
-    body: "Run lint checks in pipelines and fail builds on structural violations.",
-    code: "image: captionlint/cli:latest",
+    title: "Team Workflow",
+    body: "Future phase: share rulesets and history across publishing teams.",
+    code: "future: team-workflow",
   },
 ] as const;
 
