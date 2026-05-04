@@ -5,6 +5,7 @@ import { WorkspaceTopbar } from "../_components/workspace-topbar";
 import { historyRuns } from "../../lib/history-data";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import {
   Table,
   TableBody,
@@ -37,23 +38,27 @@ export default function DashboardPage() {
     <WorkspaceShell>
       <WorkspaceTopbar
         left={<span className="text-sm font-semibold text-zinc-100">Dashboard</span>}
+        showShare={false}
+        showExport={false}
       />
 
       <div className="min-h-screen bg-[#0B0F14] px-4 pb-16 pt-20 md:px-6">
         <div className="mx-auto w-full max-w-6xl">
 
           {/* Page header */}
-          <div className="mb-8 flex items-end justify-between">
+          <div className="mb-8 flex flex-wrap items-start justify-between gap-3">
             <div>
               <h1 className="mb-1 text-2xl font-semibold tracking-tight text-zinc-100">Dashboard</h1>
               <p className="text-sm text-zinc-400">Caption QA activity for your workspace.</p>
             </div>
-            <Link
-              href="/upload"
-              className="inline-flex h-9 items-center gap-2 rounded-md bg-[#22C55E] px-4 text-sm font-medium text-[#003915] hover:bg-[#4BE277]"
+            <Button
+              size="lg"
+              className="shrink-0"
+              render={<Link href="/upload" />}
+              nativeButton={false}
             >
-              New Lint Run <span aria-hidden>→</span>
-            </Link>
+              New Lint Run <span data-icon="inline-end">→</span>
+            </Button>
           </div>
 
           {/* KPI stat cards */}
@@ -80,9 +85,15 @@ export default function DashboardPage() {
           <div className="mb-8">
             <div className="mb-4 flex items-center justify-between">
               <h2 className="text-base font-semibold text-zinc-100">Recent Runs</h2>
-              <Link href="/history" className="text-xs text-zinc-400 hover:text-zinc-100">
-                View all →
-              </Link>
+              <Button
+                variant="link"
+                size="sm"
+                className="px-0 text-zinc-400 hover:text-zinc-100"
+                render={<Link href="/history" />}
+                nativeButton={false}
+              >
+                View all <span data-icon="inline-end">→</span>
+              </Button>
             </div>
             <div className="overflow-hidden rounded-lg border border-[#1F2937] bg-[#111827]">
               <Table>
@@ -117,9 +128,15 @@ export default function DashboardPage() {
                           <Badge variant="outline" className={status.className}>{status.label}</Badge>
                         </TableCell>
                         <TableCell className="px-4 py-3 text-right">
-                          <Link href="/results" className="text-xs text-zinc-400 hover:text-zinc-100">
-                            View →
-                          </Link>
+                          <Button
+                            variant="link"
+                            size="xs"
+                            className="px-0 text-zinc-400 hover:text-zinc-100"
+                            render={<Link href="/results" />}
+                            nativeButton={false}
+                          >
+                            View <span data-icon="inline-end">→</span>
+                          </Button>
                         </TableCell>
                       </TableRow>
                     );
@@ -136,9 +153,9 @@ export default function DashboardPage() {
                 <div className="mb-3 flex size-9 items-center justify-center rounded-md border border-[#1F2937] bg-[#0B0F14] text-base">↑</div>
                 <h3 className="mb-1 text-sm font-semibold text-zinc-100">New Lint Run</h3>
                 <p className="mb-4 text-xs text-zinc-400">Upload an SRT or VTT file and run caption QA checks.</p>
-                <Link href="/upload" className="inline-flex h-8 items-center rounded-md bg-[#22C55E] px-3 text-xs font-medium text-[#003915] hover:bg-[#4BE277]">
+                <Button size="sm" render={<Link href="/upload" />} nativeButton={false}>
                   Upload File
-                </Link>
+                </Button>
               </CardContent>
             </Card>
 
@@ -147,9 +164,14 @@ export default function DashboardPage() {
                 <div className="mb-3 flex size-9 items-center justify-center rounded-md border border-[#1F2937] bg-[#0B0F14] text-base">⊟</div>
                 <h3 className="mb-1 text-sm font-semibold text-zinc-100">Vocabulary Rules</h3>
                 <p className="mb-4 text-xs text-zinc-400">Protect brand names and technical terms from awkward line breaks.</p>
-                <Link href="/rulesets" className="inline-flex h-8 items-center rounded-md border border-[#1F2937] bg-[#0B0F14] px-3 text-xs font-medium text-zinc-100 hover:bg-[#1F2937]">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  render={<Link href="/rulesets" />}
+                  nativeButton={false}
+                >
                   Manage Terms
-                </Link>
+                </Button>
               </CardContent>
             </Card>
 
@@ -158,9 +180,14 @@ export default function DashboardPage() {
                 <div className="mb-3 flex size-9 items-center justify-center rounded-md border border-[#1F2937] bg-[#0B0F14] text-base">↺</div>
                 <h3 className="mb-1 text-sm font-semibold text-zinc-100">Re-fix from History</h3>
                 <p className="mb-4 text-xs text-zinc-400">Apply a different platform preset to a previous caption run.</p>
-                <Link href="/history" className="inline-flex h-8 items-center rounded-md border border-[#1F2937] bg-[#0B0F14] px-3 text-xs font-medium text-zinc-100 hover:bg-[#1F2937]">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  render={<Link href="/history" />}
+                  nativeButton={false}
+                >
                   Open History
-                </Link>
+                </Button>
               </CardContent>
             </Card>
           </div>

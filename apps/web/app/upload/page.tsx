@@ -22,8 +22,8 @@ export default function UploadPage() {
     <WorkspaceShell>
       <WorkspaceTopbar
         left={<span className="font-mono text-sm font-semibold text-zinc-100">New Lint Run</span>}
-        shareLabel="History"
-        exportLabel="Run QA"
+        showShare={false}
+        showExport={false}
       />
 
       <main className="min-h-screen bg-[#0B0F14] px-4 pb-12 pt-20 md:px-6">

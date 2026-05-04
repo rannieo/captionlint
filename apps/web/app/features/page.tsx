@@ -5,7 +5,7 @@ import { featureFlags } from "@/lib/feature-flags";
 
 export const metadata: Metadata = {
   title: "CaptionLint | Features",
-  description: "Understand the end-to-end caption QA pipeline and integrations.",
+  description: "Understand the upload-to-export caption QA workflow.",
 };
 
 const pipeline = [
@@ -54,11 +54,11 @@ export default function FeaturesPage() {
     <PublicPageShell active="features" showAuthCta={false} mainClassName="pb-24">
       <section className="mb-16 max-w-3xl">
         <h1 className="mb-4 text-4xl font-bold tracking-tight md:text-5xl">
-          Precision linting for structural text.
+          Upload, check, fix, export.
         </h1>
         <p className="text-zinc-400">
-          Built for technical accuracy. Catch linguistic inconsistencies, timing errors, and
-          formatting violations before they merge.
+          CaptionLint validates readability, timing, structure, and vocabulary consistency for
+          caption files you already have.
         </p>
       </section>
 

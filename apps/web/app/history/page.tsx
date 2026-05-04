@@ -24,6 +24,8 @@ export default function HistoryPage() {
     <WorkspaceShell>
       <WorkspaceTopbar
         left={<span className="text-sm font-semibold text-zinc-100">Linting History</span>}
+        showShare={false}
+        showExport={false}
       />
 
       <div className="min-h-screen bg-[#0B0F14] px-4 pb-8 pt-20 md:px-6">
@@ -100,8 +102,24 @@ export default function HistoryPage() {
                     </TableCell>
                     <TableCell className="px-4 py-3 text-right">
                       <div className="flex justify-end gap-1">
-                        <button type="button" className="grid size-7 place-items-center rounded hover:bg-[#1F2937] hover:text-[#22c55e]" title="Re-run">↺</button>
-                        <button type="button" className="grid size-7 place-items-center rounded text-zinc-400 hover:bg-[#1F2937] hover:text-zinc-100" title="Download Log">↓</button>
+                        <Button
+                          type="button"
+                          size="icon-sm"
+                          variant="ghost"
+                          className="text-zinc-400 hover:text-[#22c55e]"
+                          title="Re-run"
+                        >
+                          ↺
+                        </Button>
+                        <Button
+                          type="button"
+                          size="icon-sm"
+                          variant="ghost"
+                          className="text-zinc-400 hover:text-zinc-100"
+                          title="Download Log"
+                        >
+                          ↓
+                        </Button>
                       </div>
                     </TableCell>
                   </TableRow>
@@ -113,13 +131,49 @@ export default function HistoryPage() {
                 Showing 1 to {historyRuns.length} of 128 entries
               </span>
               <div className="flex items-center gap-1">
-                <button type="button" className="grid size-7 place-items-center rounded text-zinc-600">‹</button>
-                <button type="button" className="grid size-7 place-items-center rounded bg-[#22c55e] font-mono text-xs font-semibold text-[#003915]">1</button>
-                <button type="button" className="grid size-7 place-items-center rounded font-mono text-xs text-zinc-100 hover:bg-zinc-700">2</button>
-                <button type="button" className="grid size-7 place-items-center rounded font-mono text-xs text-zinc-100 hover:bg-zinc-700">3</button>
+                <Button type="button" size="icon-sm" variant="ghost" className="text-zinc-600">
+                  ‹
+                </Button>
+                <Button
+                  type="button"
+                  size="icon-sm"
+                  className="font-mono text-xs font-semibold text-[#003915]"
+                >
+                  1
+                </Button>
+                <Button
+                  type="button"
+                  size="icon-sm"
+                  variant="ghost"
+                  className="font-mono text-xs text-zinc-100 hover:bg-zinc-700"
+                >
+                  2
+                </Button>
+                <Button
+                  type="button"
+                  size="icon-sm"
+                  variant="ghost"
+                  className="font-mono text-xs text-zinc-100 hover:bg-zinc-700"
+                >
+                  3
+                </Button>
                 <span className="px-1 text-zinc-400">...</span>
-                <button type="button" className="grid size-7 place-items-center rounded font-mono text-xs text-zinc-100 hover:bg-zinc-700">32</button>
-                <button type="button" className="grid size-7 place-items-center rounded font-mono text-xs text-zinc-100 hover:bg-zinc-700">›</button>
+                <Button
+                  type="button"
+                  size="icon-sm"
+                  variant="ghost"
+                  className="font-mono text-xs text-zinc-100 hover:bg-zinc-700"
+                >
+                  32
+                </Button>
+                <Button
+                  type="button"
+                  size="icon-sm"
+                  variant="ghost"
+                  className="font-mono text-xs text-zinc-100 hover:bg-zinc-700"
+                >
+                  ›
+                </Button>
               </div>
             </div>
           </div>

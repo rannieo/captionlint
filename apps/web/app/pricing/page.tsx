@@ -2,11 +2,12 @@ import type { Metadata } from "next";
 import { pricingCompareRows, pricingPlans } from "../../lib/pricing-data";
 import { Button } from "@/components/ui/button";
 import { PublicPageShell } from "../_components/public-page-shell";
+import { featureFlags } from "@/lib/feature-flags";
 
 export const metadata: Metadata = {
   title: "CaptionLint | Pricing",
   description:
-    "Scale your caption workflows with high-utility environments designed for individuals, teams, and enterprise scale.",
+    "Simple pricing for caption QA workflows across individual creators and editors.",
 };
 
 function CheckMark({ kind }: { kind: "green" | "gray" | "dash" }) {
@@ -21,6 +22,15 @@ function CheckMark({ kind }: { kind: "green" | "gray" | "dash" }) {
 }
 
 export default function PricingPage() {
+  const visiblePlans = featureFlags.showTeamPlan
+    ? pricingPlans
+    : pricingPlans.filter((plan) => plan.id !== "team");
+  const visibleCompareRows = featureFlags.showAdvancedPricingRows
+    ? pricingCompareRows
+    : pricingCompareRows.filter(
+        (row) => row.feature !== "API Access" && row.feature !== "CI/CD Integration"
+      );
+
   return (
     <PublicPageShell active="pricing" showAuthCta={false} mainClassName="pb-24">
       <div className="mb-16 text-center">
@@ -28,13 +38,16 @@ export default function PricingPage() {
           Predictable pricing for precise linting.
         </h1>
         <p className="mx-auto max-w-2xl text-sm text-zinc-400">
-          Scale your caption workflows with high-utility environments designed for individuals,
-          teams, and enterprise scale.
+          Choose a plan for repeatable caption QA across upload, lint, review, and export workflows.
         </p>
       </div>
 
-      <div className="mb-20 grid gap-4 lg:grid-cols-3">
-        {pricingPlans.map((plan) => (
+      <div
+        className={`mb-20 grid gap-4 ${
+          featureFlags.showTeamPlan ? "lg:grid-cols-3" : "lg:grid-cols-2"
+        }`}
+      >
+        {visiblePlans.map((plan) => (
           <article
             key={plan.id}
             className={`relative flex flex-col overflow-hidden rounded-lg border p-6 ${
@@ -96,13 +109,15 @@ export default function PricingPage() {
                 <th className="border-b border-[#35343680] px-4 py-2 text-center text-[11px] uppercase tracking-wider text-[#22c55e]">
                   Pro
                 </th>
-                <th className="border-b border-[#35343680] px-4 py-2 text-center text-[11px] uppercase tracking-wider text-zinc-400">
-                  Team
-                </th>
+                {featureFlags.showTeamPlan ? (
+                  <th className="border-b border-[#35343680] px-4 py-2 text-center text-[11px] uppercase tracking-wider text-zinc-400">
+                    Team
+                  </th>
+                ) : null}
               </tr>
             </thead>
             <tbody>
-              {pricingCompareRows.map((row) => (
+              {visibleCompareRows.map((row) => (
                 <tr key={row.feature} className="hover:bg-[#1c1b1c]">
                   <td className="border-b border-[#35343680] px-4 py-3 text-zinc-100">{row.feature}</td>
                   <td className="border-b border-[#35343680] px-4 py-3 text-center">
@@ -123,15 +138,17 @@ export default function PricingPage() {
                       <span className="font-mono text-xs text-[#22c55e]">{row.pro}</span>
                     )}
                   </td>
-                  <td className="border-b border-[#35343680] px-4 py-3 text-center">
-                    {row.team === "check" ? (
-                      <CheckMark kind="gray" />
-                    ) : row.team === "dash" ? (
-                      <CheckMark kind="dash" />
-                    ) : (
-                      <span className="font-mono text-xs text-zinc-400">{row.team}</span>
-                    )}
-                  </td>
+                  {featureFlags.showTeamPlan ? (
+                    <td className="border-b border-[#35343680] px-4 py-3 text-center">
+                      {row.team === "check" ? (
+                        <CheckMark kind="gray" />
+                      ) : row.team === "dash" ? (
+                        <CheckMark kind="dash" />
+                      ) : (
+                        <span className="font-mono text-xs text-zinc-400">{row.team}</span>
+                      )}
+                    </td>
+                  ) : null}
                 </tr>
               ))}
             </tbody>

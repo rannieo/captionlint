@@ -3,6 +3,7 @@ import Link from "next/link";
 import { ShieldCheck } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { PublicPageShell } from "../_components/public-page-shell";
+import { featureFlags } from "@/lib/feature-flags";
 
 export const metadata: Metadata = {
   title: "CaptionLint | Logged Out",
@@ -64,7 +65,15 @@ export default function LoggedOutPage() {
 
         {/* Footer links */}
         <div className="mt-8 flex items-center justify-center gap-1 text-xs text-zinc-500">
-          <Link href="/docs" className="hover:text-zinc-300">Documentation</Link>
+          {featureFlags.showDocsPortal ? (
+            <Link href="/docs" className="hover:text-zinc-300">
+              Documentation
+            </Link>
+          ) : (
+            <Link href="/pricing" className="hover:text-zinc-300">
+              Pricing
+            </Link>
+          )}
           <span className="mx-2">·</span>
           <Link href="#" className="hover:text-zinc-300">Support</Link>
         </div>

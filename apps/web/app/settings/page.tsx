@@ -10,9 +10,13 @@ import { billingSummary, profileSummary } from "../../lib/settings-data";
 import { featureFlags } from "@/lib/feature-flags";
 import { SettingsSidebarNav } from "./settings-sidebar-nav";
 
+const settingsDescription = featureFlags.showApiKeys
+  ? "Manage account preferences, API keys, and workspace billing."
+  : "Manage account preferences and workspace billing.";
+
 export const metadata: Metadata = {
   title: "CaptionLint | Workspace Settings",
-  description: "Manage account preferences, API keys, and workspace billing.",
+  description: settingsDescription,
 };
 
 export default function SettingsPage() {
@@ -23,19 +27,15 @@ export default function SettingsPage() {
     <WorkspaceShell>
       <WorkspaceTopbar
         left={<span className="text-sm font-semibold text-zinc-100">Workspace Settings</span>}
-        rightSlot={
-          <Button size="sm" variant="ghost" className="h-7 text-[#22C55E] hover:bg-[#1F2937]">
-            Share
-          </Button>
-        }
-        exportLabel="Export"
+        showShare={false}
+        showExport={false}
       />
 
       <main className="min-h-screen bg-[#0B0F14] px-4 pb-16 pt-20 md:px-6">
         <div className="mx-auto w-full max-w-5xl">
           <div className="mb-8">
             <h1 className="mb-1 text-2xl font-semibold tracking-tight text-zinc-100">Workspace Settings</h1>
-            <p className="text-sm text-zinc-400">Manage your account preferences, API keys, and workspace billing.</p>
+            <p className="text-sm text-zinc-400">{settingsDescription}</p>
           </div>
 
           <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
@@ -50,7 +50,14 @@ export default function SettingsPage() {
                     <div className="mb-8 flex items-center gap-6">
                       <div className="relative grid size-20 place-items-center rounded-full border border-[#1F2937] bg-zinc-800 text-xl font-semibold text-zinc-200">
                         {firstName?.[0] ?? "U"}{lastName?.[0] ?? "S"}
-                        <button className="absolute bottom-0 right-0 grid size-7 place-items-center rounded-full border border-[#1F2937] bg-[#0B0F14] text-zinc-200 transition-colors hover:text-[#22C55E]">✎</button>
+                        <Button
+                          type="button"
+                          size="icon-sm"
+                          variant="outline"
+                          className="absolute bottom-0 right-0 rounded-full border-[#1F2937] bg-[#0B0F14] text-zinc-200 hover:text-[#22C55E]"
+                        >
+                          ✎
+                        </Button>
                       </div>
                       <div className="flex items-center gap-2">
                         <Button variant="outline" className="border-[#1F2937] bg-[#0B0F14]">Upload New</Button>
@@ -107,8 +114,12 @@ export default function SettingsPage() {
                           </div>
                           <div className="flex items-center gap-3">
                             <span className="text-xs text-zinc-400">{apiKey.created}</span>
-                            <button className="text-zinc-400 hover:text-zinc-100">⧉</button>
-                            <button className="text-zinc-400 hover:text-[#ef4444]">🗑</button>
+                            <Button type="button" size="icon-sm" variant="ghost" className="text-zinc-400 hover:text-zinc-100">
+                              ⧉
+                            </Button>
+                            <Button type="button" size="icon-sm" variant="ghost" className="text-zinc-400 hover:text-[#ef4444]">
+                              🗑
+                            </Button>
                           </div>
                         </div>
                       ))}
@@ -181,9 +192,18 @@ export default function SettingsPage() {
                           <h4 className="text-sm font-medium text-zinc-100">{pref.title}</h4>
                           <p className="mt-1 max-w-md text-xs text-zinc-400">{pref.description}</p>
                         </div>
-                        <button className={`relative h-5 w-9 rounded-full transition ${pref.enabled ? "bg-[#22C55E]" : "bg-[#1F2937]"}`}>
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="icon-sm"
+                          role="switch"
+                          aria-checked={pref.enabled}
+                          className={`relative h-5 w-9 rounded-full px-0 transition ${
+                            pref.enabled ? "bg-[#22C55E]" : "bg-[#1F2937]"
+                          }`}
+                        >
                           <span className={`absolute top-[2px] size-4 rounded-full bg-white transition ${pref.enabled ? "left-[18px]" : "left-[2px]"}`} />
-                        </button>
+                        </Button>
                       </div>
                       {i < arr.length - 1 && <Separator className="bg-[#1F2937]" />}
                     </div>

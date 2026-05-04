@@ -22,7 +22,7 @@ export function PublicPageShell({
   pageClassName,
 }: PublicPageShellProps) {
   return (
-    <div className={cn("min-h-screen bg-[#131314] text-zinc-100", pageClassName)}>
+    <div className={cn("min-h-screen bg-[#0B0F14] text-zinc-100", pageClassName)}>
       <PublicNavbar active={active} showAuthCta={showAuthCta} showOpenAppLink={showOpenAppLink} />
       <main className={cn("mx-auto w-full max-w-6xl px-6 pt-32", mainClassName)}>{children}</main>
       {showFooter ? <PublicFooter /> : null}

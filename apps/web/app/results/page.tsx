@@ -26,16 +26,6 @@ export default function ResultsPage() {
             </Badge>
           </>
         }
-        rightSlot={
-          <div className="hidden rounded border border-[#1F2937] bg-[#0A0A0B] p-0.5 sm:flex">
-            <Button size="xs" variant="ghost" className="bg-zinc-900 text-zinc-100">
-              Lint Mode
-            </Button>
-            <Button size="xs" variant="ghost" className="text-zinc-500">
-              Edit Mode
-            </Button>
-          </div>
-        }
       />
 
       {/* Severity summary bar */}
@@ -70,7 +60,9 @@ export default function ResultsPage() {
         <aside className="flex h-full w-full flex-col border-b border-[#1E293B] bg-[#111112] md:w-[320px] md:shrink-0 md:border-b-0 md:border-r">
           <div className="flex items-center justify-between border-b border-[#1E293B] p-4">
             <h2 className="text-base font-semibold tracking-tight text-zinc-100 md:text-lg">Findings</h2>
-            <button type="button" className="text-zinc-400 hover:text-zinc-100" title="Filter">⊟</button>
+            <Button type="button" size="icon-sm" variant="ghost" className="text-zinc-400 hover:text-zinc-100" title="Filter">
+              ⊟
+            </Button>
           </div>
           <div className="flex-1 overflow-y-auto">
             {resultFindings.map((finding, i) => {
@@ -102,9 +94,9 @@ export default function ResultsPage() {
                   </div>
                   <p className="mb-2 text-sm text-zinc-100">{finding.message}</p>
                   {finding.action && (
-                    <button type="button" className="text-xs text-[#22C55E] underline underline-offset-2">
+                    <Button type="button" variant="link" size="xs" className="h-auto px-0 text-xs text-[#22C55E] underline underline-offset-2">
                       {finding.action}
-                    </button>
+                    </Button>
                   )}
                 </div>
               );
@@ -116,8 +108,12 @@ export default function ResultsPage() {
         <section className="relative hidden flex-1 flex-col bg-[#0A0A0B] md:flex">
           <div className="flex h-10 items-center justify-between border-b border-[#1E293B] bg-[#111112] px-4">
             <div className="flex items-center gap-3 text-xs text-zinc-500">
-              <button type="button" className="hover:text-zinc-100">Wrap text</button>
-              <button type="button" className="hover:text-zinc-100">Show hidden chars</button>
+              <Button type="button" variant="ghost" size="xs" className="h-auto px-0 text-xs text-zinc-500 hover:text-zinc-100">
+                Wrap text
+              </Button>
+              <Button type="button" variant="ghost" size="xs" className="h-auto px-0 text-xs text-zinc-500 hover:text-zinc-100">
+                Show hidden chars
+              </Button>
             </div>
             <div className="flex items-center gap-3 font-mono text-xs text-zinc-500">
               <span>Ln 42, Col 18</span>

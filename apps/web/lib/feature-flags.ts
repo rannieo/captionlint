@@ -7,4 +7,6 @@ export const featureFlags = {
   showProjects: false,
   showCliMarketing: false,
   showAdvancedIntegrations: false,
+  showTeamPlan: false,
+  showAdvancedPricingRows: false,
 } as const;
