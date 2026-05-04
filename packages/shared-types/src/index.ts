@@ -88,4 +88,5 @@ export type VocabularyTerm = {
   term: string;
   caseSensitive: boolean;
   createdAt: string;
+  workspaceId?: string;
 };

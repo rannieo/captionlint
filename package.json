@@ -4,10 +4,15 @@
   "scripts": {
     "build": "turbo run build",
     "dev": "turbo run dev",
+    "dev:all": "turbo run dev --filter=@captionlint/api --filter=@captionlint/worker --filter=web",
+    "dev:api": "turbo run dev --filter=@captionlint/api",
+    "dev:worker": "turbo run dev --filter=@captionlint/worker",
     "lint": "turbo run lint",
     "format": "prettier --write \"**/*.{ts,tsx,md}\"",
     "check-types": "turbo run check-types",
-    "test": "turbo run test"
+    "test": "turbo run test",
+    "db:generate": "turbo run db:generate --filter=@repo/database",
+    "db:push": "turbo run db:push --filter=@repo/database"
   },
   "devDependencies": {
     "prettier": "^3.7.4",
