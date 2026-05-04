@@ -3,6 +3,7 @@ import { WorkspaceShell } from "../_components/workspace-shell";
 import { WorkspaceTopbar } from "../_components/workspace-topbar";
 import { resultFindings, resultSeverityMetrics, editorLines } from "../../lib/results-data";
 import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
 
 export const metadata: Metadata = {
@@ -17,12 +18,12 @@ export default function ResultsPage() {
         left={
           <>
             <span className="font-mono text-sm font-semibold text-zinc-100">video_final.srt</span>
-            <span className="hidden rounded bg-[#1F2937] px-2 py-0.5 font-mono text-[10px] text-zinc-300 sm:inline-flex">
+            <Badge variant="outline" className="hidden h-auto rounded border-[#1F2937] bg-[#1F2937] px-2 py-0.5 font-mono text-[10px] text-zinc-300 sm:inline-flex">
               English (US)
-            </span>
-            <span className="inline-flex rounded bg-[#93000a] px-2 py-0.5 font-mono text-[10px] text-[#ffb4ab]">
+            </Badge>
+            <Badge variant="outline" className="h-auto rounded border-transparent bg-[#93000a] px-2 py-0.5 font-mono text-[10px] text-[#ffb4ab]">
               12 Issues
-            </span>
+            </Badge>
           </>
         }
         rightSlot={
@@ -37,7 +38,7 @@ export default function ResultsPage() {
         }
       />
 
-      {/* Severity summary bar — full width on mobile, offset on desktop */}
+      {/* Severity summary bar */}
       <div className="fixed left-0 right-0 top-12 z-30 flex items-center gap-4 border-b border-[#1E293B] bg-[#111112] px-4 py-3 md:left-[280px] md:gap-6 md:px-6">
         {resultSeverityMetrics.map((metric) => {
           const colorClass =
@@ -62,20 +63,15 @@ export default function ResultsPage() {
         })}
       </div>
 
-      {/* Main content — stacks on mobile, splits on desktop */}
+      {/* Main content */}
       <div className="mt-[88px] flex h-[calc(100vh-88px)] flex-col overflow-hidden md:flex-row">
 
-        {/* Findings panel — full width on mobile, fixed sidebar on desktop */}
+        {/* Findings panel */}
         <aside className="flex h-full w-full flex-col border-b border-[#1E293B] bg-[#111112] md:w-[320px] md:shrink-0 md:border-b-0 md:border-r">
           <div className="flex items-center justify-between border-b border-[#1E293B] p-4">
-            <h2 className="text-base font-semibold tracking-tight text-zinc-100 md:text-lg">
-              Findings
-            </h2>
-            <button type="button" className="text-zinc-400 hover:text-zinc-100" title="Filter">
-              ⊟
-            </button>
+            <h2 className="text-base font-semibold tracking-tight text-zinc-100 md:text-lg">Findings</h2>
+            <button type="button" className="text-zinc-400 hover:text-zinc-100" title="Filter">⊟</button>
           </div>
-          {/* On mobile show max 2 findings then hint; desktop shows all */}
           <div className="flex-1 overflow-y-auto">
             {resultFindings.map((finding, i) => {
               const isActive = i === 0;
@@ -100,9 +96,9 @@ export default function ResultsPage() {
                       </span>
                       <span className="font-mono text-[13px] text-zinc-400">Line {finding.line}</span>
                     </div>
-                    <span className={cn("text-[10px] uppercase tracking-wider", severityClass)}>
+                    <Badge variant="outline" className={cn("h-auto rounded border-transparent bg-transparent px-0 py-0 text-[10px] uppercase tracking-wider", severityClass)}>
                       {finding.category}
-                    </span>
+                    </Badge>
                   </div>
                   <p className="mb-2 text-sm text-zinc-100">{finding.message}</p>
                   {finding.action && (
@@ -116,16 +112,12 @@ export default function ResultsPage() {
           </div>
         </aside>
 
-        {/* Caption preview — hidden on mobile, visible on desktop */}
+        {/* Caption preview */}
         <section className="relative hidden flex-1 flex-col bg-[#0A0A0B] md:flex">
           <div className="flex h-10 items-center justify-between border-b border-[#1E293B] bg-[#111112] px-4">
             <div className="flex items-center gap-3 text-xs text-zinc-500">
-              <button type="button" className="hover:text-zinc-100">
-                Wrap text
-              </button>
-              <button type="button" className="hover:text-zinc-100">
-                Show hidden chars
-              </button>
+              <button type="button" className="hover:text-zinc-100">Wrap text</button>
+              <button type="button" className="hover:text-zinc-100">Show hidden chars</button>
             </div>
             <div className="flex items-center gap-3 font-mono text-xs text-zinc-500">
               <span>Ln 42, Col 18</span>
@@ -144,12 +136,7 @@ export default function ResultsPage() {
                 {line.error && (
                   <div className="absolute -left-px top-1/2 h-6 w-1 -translate-y-1/2 rounded-r bg-[#ef4444]" />
                 )}
-                <div
-                  className={cn(
-                    "w-12 shrink-0 pr-4 text-right text-zinc-600",
-                    line.error && "font-medium text-[#ef4444]"
-                  )}
-                >
+                <div className={cn("w-12 shrink-0 pr-4 text-right text-zinc-600", line.error && "font-medium text-[#ef4444]")}>
                   {line.num}
                 </div>
                 <div className="flex-1">

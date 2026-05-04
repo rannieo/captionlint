@@ -4,6 +4,7 @@ import { WorkspaceTopbar } from "../_components/workspace-topbar";
 import { vocabTokens } from "../../lib/rulesets-data";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 import {
   Select,
   SelectContent,
@@ -12,6 +13,14 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
 
 export const metadata: Metadata = {
   title: "CaptionLint | Vocabulary Rulesets",
@@ -31,9 +40,9 @@ export default function RulesetsPage() {
         left={
           <>
             <span className="text-sm font-semibold text-[#22C55E]">◈ Global Vocabulary</span>
-            <span className="inline-flex rounded border border-[#1F2937] bg-[#1F2937] px-2 py-0.5 font-mono text-xs text-zinc-400">
+            <Badge variant="outline" className="h-auto rounded border-[#1F2937] bg-[#1F2937] px-2 py-0.5 font-mono text-xs text-zinc-400">
               v2.4 (Active)
-            </span>
+            </Badge>
           </>
         }
         shareLabel="Share"
@@ -80,9 +89,7 @@ export default function RulesetsPage() {
                 Enforcement Rules
               </span>
               <label className="mb-4 flex items-start gap-3">
-                <div className="mt-0.5 grid size-4 place-items-center rounded border border-[#22C55E] bg-[#22C55E] text-[10px] text-[#0A0A0B]">
-                  ✓
-                </div>
+                <div className="mt-0.5 grid size-4 place-items-center rounded border border-[#22C55E] bg-[#22C55E] text-[10px] text-[#0A0A0B]">✓</div>
                 <div>
                   <div className="text-sm text-zinc-100">Case Strict</div>
                   <div className="text-xs text-zinc-400">Enforce exact capitalization</div>
@@ -90,9 +97,7 @@ export default function RulesetsPage() {
               </label>
 
               <label className="mb-4 flex items-start gap-3">
-                <div className="mt-0.5 grid size-4 place-items-center rounded border border-[#22C55E] bg-[#22C55E] text-[10px] text-[#0A0A0B]">
-                  ✓
-                </div>
+                <div className="mt-0.5 grid size-4 place-items-center rounded border border-[#22C55E] bg-[#22C55E] text-[10px] text-[#0A0A0B]">✓</div>
                 <div>
                   <div className="text-sm text-zinc-100">Exact Match</div>
                   <div className="text-xs text-zinc-400">Do not match substrings</div>
@@ -132,80 +137,63 @@ export default function RulesetsPage() {
                 124 Tokens Active
               </span>
               <span className="mx-1 hidden h-4 w-px bg-[#1F2937] sm:block" />
-              <button
-                type="button"
-                className="grid size-7 place-items-center rounded text-zinc-400 hover:bg-[#1F2937] hover:text-zinc-100"
-                title="Filter"
-              >
-                ⊟
-              </button>
-              <button
-                type="button"
-                className="grid size-7 place-items-center rounded text-zinc-400 hover:bg-[#1F2937] hover:text-zinc-100"
-                title="Sort"
-              >
-                ⊞
-              </button>
+              <button type="button" className="grid size-7 place-items-center rounded text-zinc-400 hover:bg-[#1F2937] hover:text-zinc-100" title="Filter">⊟</button>
+              <button type="button" className="grid size-7 place-items-center rounded text-zinc-400 hover:bg-[#1F2937] hover:text-zinc-100" title="Sort">⊞</button>
             </div>
           </div>
 
           <div className="flex-1 overflow-auto p-4 md:p-6">
-            <table className="w-full border-collapse overflow-hidden rounded-lg border border-[#1F2937] bg-[#111827]">
-              <thead>
-                <tr>
-                  <th className="w-1/3 border-b border-[#1F2937] bg-[#1F2937] px-4 py-3 text-left text-[11px] uppercase tracking-wider text-zinc-400">
-                    Token String
-                  </th>
-                  <th className="w-1/4 border-b border-[#1F2937] bg-[#1F2937] px-4 py-3 text-left text-[11px] uppercase tracking-wider text-zinc-400">
-                    Category
-                  </th>
-                  <th className="border-b border-[#1F2937] bg-[#1F2937] px-4 py-3 text-left text-[11px] uppercase tracking-wider text-zinc-400">
-                    Flags
-                  </th>
-                  <th className="border-b border-[#1F2937] bg-[#1F2937] px-4 py-3 text-right text-[11px] uppercase tracking-wider text-zinc-400">
-                    Hit Count
-                  </th>
-                  <th className="w-12 border-b border-[#1F2937] bg-[#1F2937] px-4 py-3" />
-                </tr>
-              </thead>
-              <tbody>
-                {vocabTokens.map((token) => (
-                  <tr key={token.token} className="group border-b border-[#1F2937] hover:bg-zinc-900">
-                    <td className="px-4 py-3">
-                      <span className="font-mono text-sm text-[#22C55E]">{token.token}</span>
-                    </td>
-                    <td className="px-4 py-3">
-                      <span className="inline-flex rounded bg-[#1F2937] px-2 py-0.5 text-[10px] text-zinc-100">
-                        {token.category}
-                      </span>
-                    </td>
-                    <td className="px-4 py-3">
-                      <div className="flex gap-1.5">
-                        {token.flags.map((flag) => (
-                          <span
-                            key={flag}
-                            className="grid size-5 place-items-center rounded border border-[#1F2937] bg-[#1F2937] font-mono text-[11px] text-zinc-400"
-                            title={flagLabels[flag]?.title}
-                          >
-                            {flagLabels[flag]?.short}
-                          </span>
-                        ))}
-                      </div>
-                    </td>
-                    <td className="px-4 py-3 text-right font-mono text-sm text-zinc-400">{token.hitCount}</td>
-                    <td className="px-4 py-3 text-right">
-                      <button
-                        type="button"
-                        className="text-zinc-500 opacity-0 transition hover:text-[#22c55e] group-hover:opacity-100"
-                        title="Edit"
-                      >
-                        ✎
-                      </button>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+            <div className="overflow-hidden rounded-lg border border-[#1F2937] bg-[#111827]">
+              <Table>
+                <TableHeader className="bg-[#1F2937]">
+                  <TableRow className="border-b border-[#1F2937] hover:bg-transparent">
+                    <TableHead className="w-1/3 px-4 py-3 text-[11px] uppercase tracking-wider text-zinc-400">Token String</TableHead>
+                    <TableHead className="w-1/4 px-4 py-3 text-[11px] uppercase tracking-wider text-zinc-400">Category</TableHead>
+                    <TableHead className="px-4 py-3 text-[11px] uppercase tracking-wider text-zinc-400">Flags</TableHead>
+                    <TableHead className="px-4 py-3 text-right text-[11px] uppercase tracking-wider text-zinc-400">Hit Count</TableHead>
+                    <TableHead className="w-12 px-4 py-3" />
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {vocabTokens.map((token) => (
+                    <TableRow key={token.token} className="group border-b border-[#1F2937] hover:bg-zinc-900">
+                      <TableCell className="px-4 py-3">
+                        <span className="font-mono text-sm text-[#22C55E]">{token.token}</span>
+                      </TableCell>
+                      <TableCell className="px-4 py-3">
+                        <Badge variant="outline" className="h-auto rounded border-transparent bg-[#1F2937] px-2 py-0.5 text-[10px] text-zinc-100">
+                          {token.category}
+                        </Badge>
+                      </TableCell>
+                      <TableCell className="px-4 py-3">
+                        <div className="flex gap-1.5">
+                          {token.flags.map((flag) => (
+                            <Badge
+                              key={flag}
+                              variant="outline"
+                              className="h-5 w-5 rounded border-[#1F2937] bg-[#1F2937] p-0 font-mono text-[11px] text-zinc-400"
+                              title={flagLabels[flag]?.title}
+                            >
+                              {flagLabels[flag]?.short}
+                            </Badge>
+                          ))}
+                        </div>
+                      </TableCell>
+                      <TableCell className="px-4 py-3 text-right font-mono text-sm text-zinc-400">{token.hitCount}</TableCell>
+                      <TableCell className="px-4 py-3 text-right">
+                        <button
+                          type="button"
+                          className="text-zinc-500 opacity-0 transition hover:text-[#22c55e] group-hover:opacity-100"
+                          title="Edit"
+                        >
+                          ✎
+                        </button>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </div>
           </div>
         </section>
       </div>
