@@ -1,0 +1,16 @@
+1
+00:00:01,000 --> 00:00:03,000
+Welcome to CaptionLint.
+
+2
+00:00:03,200 --> 00:00:05,800
+This caption line is intentionally too long for a compact social preset.
+
+3
+00:00:05,900 --> 00:00:07,500
+We use ChatG-
+PT every day.
+
+4
+00:00:07,000 --> 00:00:08,800
+This cue overlaps the previous cue.

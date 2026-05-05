@@ -3,6 +3,7 @@ import type { PresetId } from "@repo/shared-types";
 import { WorkspaceShell } from "../_components/workspace-shell";
 import { WorkspaceTopbar } from "../_components/workspace-topbar";
 import { UploadClient } from "./upload-client";
+import { ReFicClient } from "./refix-client";
 
 export const metadata: Metadata = {
   title: "CaptionLint | Upload",
@@ -13,6 +14,7 @@ type UploadPageProps = {
   searchParams: Promise<{
     source?: string;
     preset?: string;
+    runId?: string;
   }>;
 };
 
@@ -26,7 +28,7 @@ const presetFromLabel: Record<string, PresetId> = {
 const presetValues = new Set<PresetId>(["default", "tiktok", "instagram", "youtube-shorts"]);
 
 export default async function UploadPage({ searchParams }: UploadPageProps) {
-  const { source, preset } = await searchParams;
+  const { source, preset, runId } = await searchParams;
   let normalizedPresetValue: PresetId = "default";
   if (preset && presetValues.has(preset as PresetId)) {
     normalizedPresetValue = preset as PresetId;
@@ -34,10 +36,16 @@ export default async function UploadPage({ searchParams }: UploadPageProps) {
     normalizedPresetValue = presetFromLabel[preset] ?? "default";
   }
 
+  const isRefix = Boolean(runId);
+
   return (
     <WorkspaceShell>
       <WorkspaceTopbar
-        left={<span className="font-mono text-sm font-semibold text-zinc-100">New Lint Run</span>}
+        left={
+          <span className="font-mono text-sm font-semibold text-zinc-100">
+            {isRefix ? "Re-fix Run" : "New Lint Run"}
+          </span>
+        }
         showShare={false}
         showExport={false}
       />
@@ -45,18 +53,26 @@ export default async function UploadPage({ searchParams }: UploadPageProps) {
       <main className="min-h-screen bg-[#0B0F14] px-4 pb-12 pt-20 md:px-6">
         <div className="mx-auto max-w-4xl space-y-6">
           <div>
-            <h1 className="mb-2 text-2xl font-semibold tracking-tight text-zinc-100">Upload Captions</h1>
+            <h1 className="mb-2 text-2xl font-semibold tracking-tight text-zinc-100">
+              {isRefix ? "Re-fix Captions" : "Upload Captions"}
+            </h1>
             <p className="text-sm text-zinc-400">
-              Upload an SRT or VTT file, select a platform preset, run checks, and export a cleaner file.
+              {isRefix
+                ? "Apply a different platform preset to a previous lint run without re-uploading."
+                : "Upload an SRT or VTT file, select a platform preset, run checks, and export a cleaner file."}
             </p>
-            {source ? (
+            {source && !isRefix ? (
               <p className="mt-2 font-mono text-xs text-zinc-400">
                 Re-fix source: <span className="text-zinc-200">{source}</span>
               </p>
             ) : null}
           </div>
 
-          <UploadClient source={source} initialPreset={normalizedPresetValue} />
+          {isRefix && runId ? (
+            <ReFicClient runId={runId} initialPreset={normalizedPresetValue} />
+          ) : (
+            <UploadClient source={source} initialPreset={normalizedPresetValue} />
+          )}
         </div>
       </main>
     </WorkspaceShell>

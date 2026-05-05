@@ -19,6 +19,7 @@ export type StoredHistoryRun = {
   pendingLabel: string;
   status: "clean" | "fixed" | "review";
   downloadContent: string;
+  rawContent: string;
   format: CaptionFormat;
 };
 
@@ -83,7 +84,7 @@ export function createDemoLintRun(): { run: LintRun; exportContent: string } {
   return { run: result.run, exportContent: result.exportContent };
 }
 
-export function toStoredHistoryRun(run: LintRun, exportContent: string): StoredHistoryRun {
+export function toStoredHistoryRun(run: LintRun, exportContent: string, rawContent: string): StoredHistoryRun {
   const pending = run.summary.warn + run.summary.error;
   return {
     id: run.id,
@@ -95,6 +96,7 @@ export function toStoredHistoryRun(run: LintRun, exportContent: string): StoredH
     pendingLabel: pending === 0 ? "0 Violations Found" : `${pending} Pending Review`,
     status: run.summary.error > 0 ? "review" : run.summary.warn > 0 ? "fixed" : "clean",
     downloadContent: exportContent,
+    rawContent,
     format: run.format,
   };
 }

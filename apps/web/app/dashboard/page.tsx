@@ -2,18 +2,9 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { WorkspaceShell } from "../_components/workspace-shell";
 import { WorkspaceTopbar } from "../_components/workspace-topbar";
-import { historyRuns } from "../../lib/history-data";
 import { Card, CardContent } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
+import { RecentRunsTable } from "./recent-runs-table";
 
 export const metadata: Metadata = {
   title: "CaptionLint | Dashboard",
@@ -27,11 +18,17 @@ const kpiCards = [
   { label: "Vocabulary Terms", value: "24", trend: "+4", trendLabel: "added this week", up: true },
 ];
 
-const statusConfig = {
-  fixed: { label: "Fixed", className: "h-auto rounded-full border-[#22c55e33] bg-[#22c55e1a] px-2.5 py-0.5 text-[11px] font-semibold text-[#22c55e]" },
-  review: { label: "Needs Review", className: "h-auto rounded-full border-[#f59e0b33] bg-[#f59e0b1a] px-2.5 py-0.5 text-[11px] font-semibold text-[#f59e0b]" },
-  clean: { label: "Clean", className: "h-auto rounded-full border-[#1F2937] bg-[#111827] px-2.5 py-0.5 text-[11px] font-semibold text-zinc-400" },
-} as const;
+const lintActivity = [
+  { day: "Mon", runs: 2 },
+  { day: "Tue", runs: 5 },
+  { day: "Wed", runs: 3 },
+  { day: "Thu", runs: 7 },
+  { day: "Fri", runs: 4 },
+  { day: "Sat", runs: 1 },
+  { day: "Sun", runs: 3 },
+];
+const maxRuns = Math.max(...lintActivity.map((d) => d.runs));
+
 
 export default function DashboardPage() {
   return (
@@ -81,6 +78,33 @@ export default function DashboardPage() {
             ))}
           </div>
 
+          {/* Lint activity chart */}
+          <Card className="mb-8 border border-[#1F2937] ring-0">
+            <CardContent className="p-6">
+              <div className="mb-6 flex items-center justify-between">
+                <div>
+                  <h2 className="text-base font-semibold text-zinc-100">Lint Activity</h2>
+                  <p className="mt-0.5 text-xs text-zinc-500">Runs per day — past 7 days</p>
+                </div>
+                <span className="font-mono text-2xl font-bold tabular-nums text-zinc-100">25</span>
+              </div>
+              <div className="flex h-40 items-end gap-2">
+                {lintActivity.map((d) => (
+                  <div key={d.day} className="flex flex-1 flex-col items-center gap-2">
+                    <span className="font-mono text-[10px] text-zinc-500">{d.runs}</span>
+                    <div className="flex w-full flex-col justify-end rounded-sm bg-[#1F2937]" style={{ height: "120px" }}>
+                      <div
+                        className="w-full rounded-sm bg-[#22C55E] transition-all"
+                        style={{ height: `${(d.runs / maxRuns) * 100}%` }}
+                      />
+                    </div>
+                    <span className="text-[10px] font-medium text-zinc-500">{d.day}</span>
+                  </div>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+
           {/* Recent runs */}
           <div className="mb-8">
             <div className="mb-4 flex items-center justify-between">
@@ -95,55 +119,7 @@ export default function DashboardPage() {
                 View all <span data-icon="inline-end">→</span>
               </Button>
             </div>
-            <div className="overflow-hidden rounded-lg border border-[#1F2937] bg-[#111827]">
-              <Table>
-                <TableHeader className="bg-[#1F2937]">
-                  <TableRow className="border-b border-[#1F2937] hover:bg-transparent">
-                    <TableHead className="px-4 py-3 text-[11px] font-semibold uppercase tracking-wider text-zinc-400">Filename</TableHead>
-                    <TableHead className="px-4 py-3 text-[11px] font-semibold uppercase tracking-wider text-zinc-400">Preset</TableHead>
-                    <TableHead className="px-4 py-3 text-[11px] font-semibold uppercase tracking-wider text-zinc-400">Date</TableHead>
-                    <TableHead className="px-4 py-3 text-[11px] font-semibold uppercase tracking-wider text-zinc-400">Fixed</TableHead>
-                    <TableHead className="px-4 py-3 text-[11px] font-semibold uppercase tracking-wider text-zinc-400">Status</TableHead>
-                    <TableHead className="px-4 py-3 text-right text-[11px] font-semibold uppercase tracking-wider text-zinc-400">Actions</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {historyRuns.map((run) => {
-                    const status = statusConfig[run.status];
-                    return (
-                      <TableRow key={run.file} className="border-b border-[#1F2937] last:border-0 hover:bg-[#0B0F14]">
-                        <TableCell className="px-4 py-3 font-mono text-sm text-zinc-100">{run.file}</TableCell>
-                        <TableCell className="px-4 py-3">
-                          <div className="flex flex-wrap gap-1">
-                            {run.presets.map((preset) => (
-                              <Badge key={preset} variant="outline" className="h-auto rounded border-transparent bg-[#1F2937] px-2 py-0.5 text-[10px] font-semibold text-zinc-300">
-                                {preset}
-                              </Badge>
-                            ))}
-                          </div>
-                        </TableCell>
-                        <TableCell className="px-4 py-3 font-mono text-xs text-zinc-400">{run.date}</TableCell>
-                        <TableCell className="px-4 py-3 font-mono text-sm text-zinc-100">{run.autoFixed}</TableCell>
-                        <TableCell className="px-4 py-3">
-                          <Badge variant="outline" className={status.className}>{status.label}</Badge>
-                        </TableCell>
-                        <TableCell className="px-4 py-3 text-right">
-                          <Button
-                            variant="link"
-                            size="xs"
-                            className="px-0 text-zinc-400 hover:text-zinc-100"
-                            render={<Link href="/results" />}
-                            nativeButton={false}
-                          >
-                            View <span data-icon="inline-end">→</span>
-                          </Button>
-                        </TableCell>
-                      </TableRow>
-                    );
-                  })}
-                </TableBody>
-              </Table>
-            </div>
+            <RecentRunsTable />
           </div>
 
           {/* Quick actions */}

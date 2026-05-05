@@ -4,7 +4,6 @@ import { useRouter } from "next/navigation";
 import { useMemo, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
 import {
   Select,
   SelectContent,
@@ -90,7 +89,7 @@ export function UploadClient({ source, initialPreset }: UploadClientProps) {
       }
 
       writeCurrentRun({ run: result.run, exportContent: result.exportContent });
-      prependHistoryRun(toStoredHistoryRun(result.run, result.exportContent));
+      prependHistoryRun(toStoredHistoryRun(result.run, result.exportContent, content));
       setStatus("Lint run complete. Opening results...");
       router.push("/results");
     } finally {
@@ -109,10 +108,10 @@ export function UploadClient({ source, initialPreset }: UploadClientProps) {
       <CardContent className="flex flex-col gap-4">
         <label className="block rounded border border-dashed border-[#1F2937] bg-[#0B0F14] p-8 text-center text-sm text-zinc-400">
           <div className="mb-3 text-zinc-300">Drag and drop your file here, or choose one manually</div>
-          <Input
+          <input
             type="file"
             accept=".srt,.vtt"
-            className="mx-auto max-w-xs border-[#1F2937] bg-[#111827]"
+            className="mx-auto block max-w-xs border border-[#1F2937] bg-[#111827] px-2.5 py-1 text-sm text-zinc-300 file:mr-2 file:border-0 file:bg-transparent file:text-sm file:font-medium file:text-zinc-200"
             onChange={(event) => onFileChange(event.target.files?.[0])}
           />
         </label>

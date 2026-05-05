@@ -18,6 +18,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { readHistoryRuns } from "@/lib/workflow-storage";
+import { mergeAndSortRuns } from "@/lib/history-utils";
 
 type HistoryClientProps = {
   runs: HistoryRun[];
@@ -33,15 +34,7 @@ export function HistoryClient({ runs }: HistoryClientProps) {
   const [query, setQuery] = useState("");
   const [presetFilter, setPresetFilter] = useState("all");
   const [dateFilter, setDateFilter] = useState<"all" | "7d">("all");
-  const allRuns = useMemo(() => {
-    const merged = [...browserRuns, ...runs];
-    const seen = new Set<string>();
-    return merged.filter((run) => {
-      if (seen.has(run.id)) return false;
-      seen.add(run.id);
-      return true;
-    });
-  }, [browserRuns, runs]);
+  const allRuns = useMemo(() => mergeAndSortRuns(browserRuns, runs), [browserRuns, runs]);
 
   useEffect(() => {
     setBrowserRuns(readHistoryRuns());
@@ -154,6 +147,11 @@ export function HistoryClient({ runs }: HistoryClientProps) {
                         <div className="flex items-center gap-2">
                           <span className={run.status === "fixed" ? "text-[#22c55e]" : "text-[#1F2937]"}>⬛</span>
                           <span className="font-mono text-sm text-zinc-100">{run.file}</span>
+                          {run.isDemo && (
+                            <Badge variant="outline" data-demo="true" className="h-auto rounded border-transparent bg-zinc-700 px-1.5 py-0.5 text-[10px] text-zinc-400">
+                              Demo
+                            </Badge>
+                          )}
                         </div>
                       </TableCell>
                       <TableCell className="px-4 py-3">
@@ -199,7 +197,11 @@ export function HistoryClient({ runs }: HistoryClientProps) {
                             className="text-zinc-400 hover:text-[#22c55e]"
                             render={
                               <Link
-                                href={`/upload?source=${encodeURIComponent(run.file)}&preset=${encodeURIComponent(run.presets[0] ?? "Default")}`}
+                                href={
+                                  "rawContent" in run && run.rawContent
+                                    ? `/upload?runId=${encodeURIComponent(run.id)}`
+                                    : `/upload?source=${encodeURIComponent(run.file)}&preset=${encodeURIComponent(run.presets[0] ?? "Default")}`
+                                }
                               />
                             }
                             nativeButton={false}

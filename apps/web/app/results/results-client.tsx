@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { createDemoLintRun, exportFilename } from "@/lib/workflow-data";
 import { readCurrentRun } from "@/lib/workflow-storage";
+import { WorkspaceTopbar } from "@/app/_components/workspace-topbar";
 import type { LintFinding, LintRun, Severity } from "@repo/shared-types";
 
 type ResultsClientProps = {
@@ -52,6 +53,19 @@ export function ResultsClient({ fallbackRun, fallbackExportContent }: ResultsCli
 
   return (
     <>
+      <WorkspaceTopbar
+        left={
+          <>
+            <span className="font-mono text-sm font-semibold text-zinc-100">{run.filename}</span>
+            <Badge variant="outline" className="hidden h-auto rounded border-[#1F2937] bg-[#1F2937] px-2 py-0.5 font-mono text-[10px] text-zinc-300 sm:inline-flex">
+              {run.format}
+            </Badge>
+            <Badge variant="outline" className="h-auto rounded border-transparent bg-[#93000a] px-2 py-0.5 font-mono text-[10px] text-[#ffb4ab]">
+              {run.summary.warn + run.summary.error} Issues
+            </Badge>
+          </>
+        }
+      />
       <div className="fixed left-0 right-0 top-12 z-30 flex flex-wrap items-center gap-3 border-b border-[#1E293B] bg-[#111112] px-4 py-3 md:left-[280px] md:gap-6 md:px-6">
         <SeverityMetric severity="PASS" value={run.summary.pass} label="checks passed" />
         <SeverityMetric severity="WARN" value={run.summary.warn} label="review suggested" />

@@ -8,7 +8,9 @@ export type HistoryRun = {
   pendingLabel: string;
   status: "clean" | "fixed" | "review";
   downloadContent?: string;
+  rawContent?: string;
   format?: "SRT" | "VTT";
+  isDemo?: boolean;
 };
 
 export const historyRuns: HistoryRun[] = [
@@ -21,6 +23,7 @@ export const historyRuns: HistoryRun[] = [
     pending: 0,
     pendingLabel: "0 Pending",
     status: "fixed",
+    isDemo: true,
   },
   {
     id: "run-002",
@@ -31,6 +34,7 @@ export const historyRuns: HistoryRun[] = [
     pending: 2,
     pendingLabel: "2 Manual Review",
     status: "review",
+    isDemo: true,
   },
   {
     id: "run-003",
@@ -41,6 +45,7 @@ export const historyRuns: HistoryRun[] = [
     pending: 0,
     pendingLabel: "0 Violations Found",
     status: "clean",
+    isDemo: true,
   },
   {
     id: "run-004",
@@ -51,5 +56,6 @@ export const historyRuns: HistoryRun[] = [
     pending: 0,
     pendingLabel: "0 Pending",
     status: "fixed",
+    isDemo: true,
   },
 ];
