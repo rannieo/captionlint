@@ -1,8 +1,8 @@
 import { pgTable, uuid, text, varchar, jsonb, timestamp, index } from 'drizzle-orm/pg-core';
-import { organization } from './auth';
-import { assets } from './assets';
-import { lintRuns } from './lint-runs';
-import { exports as exportsTable } from './exports';
+import { organization } from './auth.js';
+import { assets } from './assets.js';
+import { lintRuns } from './lint-runs.js';
+import { exports as exportsTable } from './exports.js';
 
 export const historyItems = pgTable('history_items', {
   id: uuid('id').primaryKey().defaultRandom(),

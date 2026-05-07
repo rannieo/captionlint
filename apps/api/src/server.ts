@@ -29,7 +29,7 @@ await fastify.register(assetsRoute, { prefix: '/assets' });
 await fastify.register(historyRoute, { prefix: '/history' });
 await fastify.register(rulesetsRoute, { prefix: '/rulesets' });
 
-const port = parseInt(process.env.API_PORT ?? '4000', 10);
+const port = parseInt(process.env.PORT ?? process.env.API_PORT ?? '4000', 10);
 const host = process.env.API_HOST ?? '0.0.0.0';
 
 try {

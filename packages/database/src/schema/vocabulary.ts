@@ -1,5 +1,5 @@
 import { pgTable, varchar, timestamp, uuid, boolean, index, text } from 'drizzle-orm/pg-core';
-import { organization } from './auth';
+import { organization } from './auth.js';
 
 export const vocabularyTerms = pgTable('vocabulary_terms', {
   id: uuid('id').primaryKey().defaultRandom(),
