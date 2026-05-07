@@ -1,8 +1,17 @@
 import type { Metadata } from "next";
+import { Clock, BookMarked, User, Users } from "lucide-react";
+import type { LucideIcon } from "lucide-react";
 import { pricingCompareRows, pricingPlans } from "../../lib/pricing-data";
 import { PublicPageShell } from "../_components/public-page-shell";
 import { featureFlags } from "@/lib/feature-flags";
 import { PricingCtaButton } from "./pricing-cta-button";
+
+const featureIcons: Record<string, LucideIcon> = {
+  schedule: Clock,
+  rule: BookMarked,
+  person: User,
+  group: Users,
+};
 
 export const metadata: Metadata = {
   title: "CaptionLint | Pricing",
@@ -78,7 +87,12 @@ export default function PricingPage() {
             <div className="flex flex-1 flex-col gap-4">
               {plan.features.map((feature) => (
                 <div key={feature.text} className="flex items-center gap-2">
-                  <span className={feature.muted ? "text-zinc-500" : "text-[#22c55e]"}>⧖</span>
+                  {(() => {
+                    const Icon = featureIcons[feature.icon];
+                    return Icon
+                      ? <Icon className={`size-4 shrink-0 ${feature.muted ? "text-zinc-500" : "text-[#22c55e]"}`} />
+                      : <span className={`text-base ${feature.muted ? "text-zinc-500" : "text-[#22c55e]"}`}>✓</span>;
+                  })()}
                   <span className={`font-mono text-sm ${feature.muted ? "text-zinc-400" : "text-zinc-100"}`}>
                     {feature.text}
                   </span>

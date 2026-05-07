@@ -68,7 +68,7 @@ export const pricingCompareRows: PricingFeatureRow[] = [
   { feature: "Syntax Highlighting", free: "check", pro: "check", team: "check" },
   { feature: "Export Downloads", free: "check", pro: "check", team: "check" },
   { feature: "History Re-fix", free: "dash", pro: "check", team: "check" },
-  { feature: "Priority Support", free: "Community", pro: "Standard", team: "Priority" },
+  // { feature: "Priority Support", free: "Community", pro: "Standard", team: "Priority" },
 ];
 
 // Legacy export kept for compatibility

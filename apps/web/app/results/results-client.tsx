@@ -5,21 +5,24 @@ import posthog from "posthog-js";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
-import { createDemoLintRun, exportFilename } from "@/lib/workflow-data";
-import { readCurrentRun } from "@/lib/workflow-storage";
+import { createDemoLintRun, createLintRunFromContent, exportFilename } from "@/lib/workflow-data";
+import { readCurrentRun, readHistoryRuns } from "@/lib/workflow-storage";
+import { defaultVocabularyTerms } from "@repo/config";
+import type { PresetId } from "@repo/shared-types";
 import { WorkspaceTopbar } from "@/app/_components/workspace-topbar";
 import type { LintFinding, LintRun, Severity } from "@repo/shared-types";
 import { exportLintRun, getLintRun, getLintRunFindings } from "@repo/api-client";
 
 type ResultsClientProps = {
   runId?: string;
+  localRunId?: string;
   fallbackRun: LintRun;
   fallbackExportContent: string;
 };
 
 const severityFilters: Array<Severity | "ALL"> = ["ALL", "ERROR", "WARN", "PASS"];
 
-export function ResultsClient({ runId, fallbackRun, fallbackExportContent }: ResultsClientProps) {
+export function ResultsClient({ runId, localRunId, fallbackRun, fallbackExportContent }: ResultsClientProps) {
   const [run, setRun] = useState(fallbackRun);
   const [exportContent, setExportContent] = useState(fallbackExportContent);
   const [activeSeverity, setActiveSeverity] = useState<Severity | "ALL">("ALL");
@@ -39,6 +42,24 @@ export function ResultsClient({ runId, fallbackRun, fallbackExportContent }: Res
       return;
     }
 
+    if (localRunId) {
+      const stored = readHistoryRuns().find((r) => r.id === localRunId);
+      if (stored?.rawContent) {
+        const result = createLintRunFromContent({
+          filename: stored.file,
+          content: stored.rawContent,
+          presetId: (stored.presets[0] ?? "default") as PresetId,
+          vocabularyTerms: defaultVocabularyTerms,
+        });
+        if (result.run && result.exportContent) {
+          setRun(result.run);
+          setExportContent(result.exportContent);
+          setActiveCueIndex(result.run.findings[0]?.cueIndex);
+        }
+      }
+      return;
+    }
+
     const stored = readCurrentRun();
     if (stored) {
       setRun(stored.run);
@@ -50,7 +71,7 @@ export function ResultsClient({ runId, fallbackRun, fallbackExportContent }: Res
     const demo = createDemoLintRun();
     setRun(demo.run);
     setExportContent(demo.exportContent);
-  }, [runId]);
+  }, [runId, localRunId]);
 
   const filteredFindings = useMemo(() => {
     if (activeSeverity === "ALL") return run.findings;

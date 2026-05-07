@@ -19,12 +19,10 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { readHistoryRuns, writeCurrentRun } from "@/lib/workflow-storage";
+import { readHistoryRuns } from "@/lib/workflow-storage";
 import { mergeAndSortRuns } from "@/lib/history-utils";
-import { createLintRunFromContent } from "@/lib/workflow-data";
 import { authClient } from "@/lib/auth-client";
 import { listHistory, refixHistory, exportLintRun, type HistoryItem } from "@repo/api-client";
-import { defaultVocabularyTerms } from "@repo/config";
 
 const PRESET_LABELS: Record<string, string> = {
   default: "Default",
@@ -184,20 +182,7 @@ export function HistoryClient({ runs }: HistoryClientProps) {
   }
 
   function viewLocalRun(run: HistoryRun) {
-    if (run.rawContent) {
-      const stored = readHistoryRuns().find((r) => r.id === run.id);
-      const content = stored?.rawContent ?? run.rawContent;
-      const result = createLintRunFromContent({
-        filename: run.file,
-        content,
-        presetId: (run.presets[0] ?? "default") as import("@repo/shared-types").PresetId,
-        vocabularyTerms: defaultVocabularyTerms,
-      });
-      if (result.run && result.exportContent) {
-        writeCurrentRun({ run: result.run, exportContent: result.exportContent });
-      }
-    }
-    router.push("/results");
+    router.push(`/results/local/${encodeURIComponent(run.id)}`);
   }
 
   return (
