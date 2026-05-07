@@ -27,7 +27,7 @@ test.describe("Gap 1 — Re-fix without re-upload", () => {
     expect(rawContent.length).toBeGreaterThan(0);
   });
 
-  test("↺ button href uses ?runId= not ?source= for browser runs", async ({ page }) => {
+  test("↺ button navigates to /upload/runs/<id> for browser runs", async ({ page }) => {
     const uploadPage = new UploadPage(page);
     await uploadPage.goto();
     await uploadPage.uploadFile("sample.srt");
@@ -38,13 +38,11 @@ test.describe("Gap 1 — Re-fix without re-upload", () => {
     await historyPage.goto();
     await historyPage.waitForTable();
 
-    const rerunLink = page.locator("tr", { hasText: "sample.srt" }).first().getByTitle("Re-run");
-    const href = await rerunLink.getAttribute("href");
-    expect(href).toContain("runId=");
-    expect(href).not.toContain("source=");
+    await historyPage.clickReRunForFile("sample.srt");
+    await page.waitForURL(/\/upload\/runs\//);
   });
 
-  test("/upload?runId=<id> shows re-fix card with filename, no file picker", async ({ page }) => {
+  test("/upload/runs/<id> shows re-fix card with filename, no file picker", async ({ page }) => {
     await page.goto("/");
     const runId = "run-refix-test";
     await page.evaluate((id) => {

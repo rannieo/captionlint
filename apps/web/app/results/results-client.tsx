@@ -141,7 +141,7 @@ export function ResultsClient({ runId, localRunId, fallbackRun, fallbackExportCo
       </div>
 
       <div className="mt-[88px] flex h-[calc(100vh-88px)] flex-col overflow-hidden md:flex-row">
-        <aside className="flex h-full w-full flex-col border-b border-[#1E293B] bg-[#111112] md:w-[360px] md:shrink-0 md:border-b-0 md:border-r">
+        <aside data-findings-panel className="flex h-full w-full flex-col border-b border-[#1E293B] bg-[#111112] md:w-[360px] md:shrink-0 md:border-b-0 md:border-r">
           <div className="flex items-center justify-between border-b border-[#1E293B] p-4">
             <h2 className="text-base font-semibold tracking-tight text-zinc-100 md:text-lg">Findings</h2>
             <span className="font-mono text-xs text-zinc-500">{filteredFindings.length} shown</span>

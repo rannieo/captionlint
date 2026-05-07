@@ -9,8 +9,11 @@ export class UploadPage {
   constructor(private page: Page) {}
 
   async goto(params?: { runId?: string; source?: string; preset?: string }) {
+    if (params?.runId) {
+      await this.page.goto(`/upload/runs/${encodeURIComponent(params.runId)}`);
+      return;
+    }
     const url = new URL("/upload", "http://localhost:3000");
-    if (params?.runId) url.searchParams.set("runId", params.runId);
     if (params?.source) url.searchParams.set("source", params.source);
     if (params?.preset) url.searchParams.set("preset", params.preset);
     await this.page.goto(url.toString());
@@ -31,7 +34,7 @@ export class UploadPage {
   }
 
   async waitForRedirectToResults() {
-    await this.page.waitForURL("**/results");
+    await this.page.waitForURL(/\/results/);
   }
 
   async expectReFicModeVisible() {

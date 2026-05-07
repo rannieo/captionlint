@@ -14,7 +14,7 @@ export class HistoryPage {
 
   async clickReRunForFile(filename: string) {
     const row = this.page.locator("tr", { hasText: filename }).first();
-    await row.getByTitle("Re-run").click();
+    await row.locator('[aria-label="Re-run with different preset"]').click();
   }
 
   async expectRowExists(filename: string) {

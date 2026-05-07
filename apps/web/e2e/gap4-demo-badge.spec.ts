@@ -68,10 +68,10 @@ test.describe("Gap 4 — Demo badge on seed history entries", () => {
     await historyPage.expectFirstRowFilename("first-real.srt");
   });
 
-  test("seed rows in /dashboard Recent Runs carry Demo badge", async ({ page }) => {
+  test("/dashboard shows sign-in prompt for unauthenticated users, not a runs table", async ({ page }) => {
     await page.goto("/dashboard");
-    await page.waitForSelector("table");
-    const demoBadges = page.locator("[data-demo='true']");
-    await expect(demoBadges.first()).toBeVisible();
+    await page.waitForLoadState("networkidle");
+    await expect(page.getByText("Sign in to see your dashboard.")).toBeVisible();
+    await expect(page.locator("table")).not.toBeVisible();
   });
 });

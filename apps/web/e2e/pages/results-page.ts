@@ -8,11 +8,13 @@ export class ResultsPage {
     await this.page.goto("/results");
   }
 
+  async gotoLocal(runId: string) {
+    await this.page.goto(`/results/local/${encodeURIComponent(runId)}`);
+  }
+
   async waitForClientHydration() {
-    await this.page.waitForFunction(() => {
-      const stored = localStorage.getItem("captionlint.currentRun");
-      return stored !== null;
-    });
+    // Wait for the results client to mount and render findings
+    await this.page.waitForSelector("[data-findings-panel]", { timeout: 5000 });
     await this.page.waitForTimeout(200);
   }
 

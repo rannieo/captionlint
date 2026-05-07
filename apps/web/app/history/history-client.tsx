@@ -287,7 +287,7 @@ export function HistoryClient({ runs }: HistoryClientProps) {
                           />
                           <span className="font-mono text-sm text-zinc-100">{run.file}</span>
                           {run.isDemo && (
-                            <span className="rounded bg-[#1F2937] px-1.5 py-0.5 font-mono text-[10px] text-zinc-500">demo</span>
+                            <span data-demo="true" className="rounded bg-[#1F2937] px-1.5 py-0.5 font-mono text-[10px] text-zinc-500">demo</span>
                           )}
                         </div>
                       </TableCell>
@@ -313,11 +313,11 @@ export function HistoryClient({ runs }: HistoryClientProps) {
                             <Tooltip>
                               <TooltipTrigger render={
                                 run.isApiRun ? (
-                                  <Button type="button" size="icon-sm" variant="ghost" className="size-7 text-zinc-500 hover:text-[#22c55e]" onClick={() => refixApiRun(run)} />
+                                  <Button type="button" size="icon-sm" variant="ghost" aria-label="Re-run with different preset" className="size-7 text-zinc-500 hover:text-[#22c55e]" onClick={() => refixApiRun(run)} />
                                 ) : run.rawContent ? (
-                                  <Button type="button" size="icon-sm" variant="ghost" className="size-7 text-zinc-500 hover:text-[#22c55e]" onClick={() => refixLocalRun(run)} />
+                                  <Button type="button" size="icon-sm" variant="ghost" aria-label="Re-run with different preset" className="size-7 text-zinc-500 hover:text-[#22c55e]" onClick={() => refixLocalRun(run)} />
                                 ) : (
-                                  <span className="inline-flex size-7 cursor-not-allowed items-center justify-center rounded-lg text-zinc-700" />
+                                  <span aria-label="Re-run unavailable" className="inline-flex size-7 cursor-not-allowed items-center justify-center rounded-lg text-zinc-700" />
                                 )
                               }>
                                 <RotateCcw className="size-3.5" />
@@ -334,6 +334,7 @@ export function HistoryClient({ runs }: HistoryClientProps) {
                                   type="button"
                                   size="icon-sm"
                                   variant="ghost"
+                                  aria-label="Download fixed file"
                                   className="size-7 text-zinc-500 hover:text-zinc-100 disabled:opacity-30"
                                   disabled={!run.downloadContent && !(run.isApiRun && run.lintRunId)}
                                   onClick={() => downloadHistoryRun(run)}
@@ -351,6 +352,7 @@ export function HistoryClient({ runs }: HistoryClientProps) {
                                   type="button"
                                   size="icon-sm"
                                   variant="ghost"
+                                  aria-label="View results"
                                   className="size-7 text-zinc-500 hover:text-zinc-100"
                                   onClick={() =>
                                     run.isApiRun && run.lintRunId
