@@ -1,9 +1,9 @@
 # CaptionLint — Product Requirements Document (PRD)
 
-**Version:** 0.1  
-**Status:** Draft for MVP implementation  
-**Product Direction:** Clean caption QA workflow with room to expand  
-**Positioning:** QA for captions you already have  
+**Version:** 0.3
+**Status:** MVP implemented — in active development
+**Product Direction:** Clean caption QA workflow with room to expand
+**Positioning:** QA for captions you already have
 
 ---
 
@@ -11,7 +11,7 @@
 
 CaptionLint is a web-based caption QA tool that helps users validate and improve caption/subtitle files they already have.
 
-The MVP focuses on a simple workflow:
+The MVP workflow is:
 
 ```txt
 Upload captions → choose preset → run QA → review issues → export
@@ -19,7 +19,7 @@ Upload captions → choose preset → run QA → review issues → export
 
 CaptionLint is not a caption generator, transcription tool, video editor, or full subtitle editor. It is a focused QA layer between caption creation and publishing.
 
-The product starts with SRT and VTT support, platform presets, lint findings, Vocabulary Rules, History, and export. It should remain simple enough for creators while being structured enough for freelance editors and future vendor workflows.
+The product supports SRT and VTT files, four platform presets, eleven lint rules across five categories, Vocabulary Rules, History, and export. The core lint engine runs browser-locally for unauthenticated guests; authenticated users get API-backed persistence and history re-fix.
 
 ---
 
@@ -173,14 +173,14 @@ Use:
 
 ### 6.1 MVP Goals
 
-1. Let users upload SRT/VTT files.
-2. Let users choose a platform preset.
-3. Run deterministic caption QA checks.
-4. Show PASS/WARN/ERROR findings.
-5. Suggest safe fixes where possible.
-6. Export cleaner caption files.
-7. Let users protect important words using Vocabulary Rules.
-8. Let users access History and re-fix prior captions.
+1. Let users upload SRT/VTT files. ✅
+2. Let users choose a platform preset. ✅
+3. Run deterministic caption QA checks. ✅
+4. Show PASS/WARN/ERROR findings. ✅
+5. Suggest safe fixes where possible. ✅
+6. Export cleaner caption files. ✅
+7. Let users protect important words using Vocabulary Rules. ✅
+8. Let users access History and re-fix prior captions. ✅
 
 ### 6.2 Business Goals
 
@@ -191,10 +191,10 @@ Use:
 
 ### 6.3 Technical Goals
 
-1. Keep lint engine deterministic and testable.
-2. Keep parsing and lint logic independent from UI.
-3. Support future batch/API workflows without major rewrite.
-4. Avoid heavy architecture too early.
+1. Keep lint engine deterministic and testable. ✅
+2. Keep parsing and lint logic independent from UI. ✅
+3. Support future batch/API workflows without major rewrite. ✅
+4. Avoid heavy architecture too early. ✅
 
 ---
 
@@ -224,31 +224,37 @@ These may be evaluated after MVP usage data.
 
 ## 8. MVP Scope
 
-### 8.1 Included
+### 8.1 Implemented
 
-- SRT parser
-- VTT parser
-- caption lint engine
-- platform presets
-- upload flow
-- lint result page
-- export fixed file
-- Vocabulary Rules
-- History
-- basic settings
-- basic landing page
-- pricing placeholder or simple plan page
+- SRT parser ✅
+- VTT parser ✅
+- caption lint engine (11 rules across 5 categories) ✅
+- platform presets (Default, TikTok, Instagram, YouTube Shorts) ✅
+- upload flow (browser-local for guests, API-backed for authenticated users) ✅
+- lint result page ✅
+- export fixed file ✅
+- Vocabulary Rules ✅
+- History ✅
+- settings page ✅
+- landing page ✅
+- pricing page (Free / Pro / Team tiers) ✅
+- auth (email/password, GitHub OAuth, Google OAuth via better-auth) ✅
+- contact page with email delivery (Resend) + rate limiting ✅
+- terms of service page ✅
+- privacy policy page ✅
+- full Playwright E2E test suite ✅
 
-### 8.2 Excluded
+### 8.2 Excluded from MVP
 
 - full docs portal
-- API keys
-- team management
+- API keys for external integrations
+- team management UI
 - batch jobs
 - compliance reports
 - CLI reference
 - API playground
 - advanced subtitle editor
+- billing / payment processing
 
 ---
 
@@ -266,10 +272,9 @@ User uploads SRT/VTT
 → user exports fixed file
 ```
 
-Success criteria:
-- user understands result within 10 seconds
-- user can export without needing to manually inspect every line
-- no confusing technical jargon in default view
+**Guest path:** lint runs entirely in the browser. Results stored in localStorage. No account required.
+
+**Authenticated path:** file uploaded as asset to API, lint job queued via BullMQ, results persisted to DB, history saved automatically.
 
 ### 9.2 Flow 2: Vocabulary Rules
 
@@ -281,16 +286,9 @@ User adds protected terms
 → user exports fixed file
 ```
 
-Example protected terms:
-- OpenAI
-- ChatGPT
-- Midjourney
-- Canva
-- YouTube Shorts
-- client brand names
-- product names
-- foreign terms
-- technical terms
+Default vocabulary terms seeded for new users: `ChatGPT`, `OpenAI`, `Midjourney`, `Canva`, `YouTube Shorts`.
+
+Free plan allows up to 5 vocabulary terms. Pro and Team plans are unlimited.
 
 ### 9.3 Flow 3: History Re-Fix
 
@@ -303,25 +301,21 @@ User opens History
 → downloads new output
 ```
 
-Success criteria:
-- user does not need to re-upload the same file
-- user can repurpose captions across TikTok, Instagram, and YouTube Shorts
-- user can quickly find previous files
+Re-fix creates a new lint run (does not overwrite the original).
+
+History re-fix is available on Pro and Team plans. Free plan shows history but restricts re-fix.
 
 ---
 
 ## 10. Functional Requirements
 
-## 10.1 Upload Caption File
-
-### Description
+### 10.1 Upload Caption File
 
 Users can upload a caption file for QA.
 
-### Requirements
+**Accepted formats:** `.srt`, `.vtt`
 
-- Accept `.srt`
-- Accept `.vtt`
+**Requirements:**
 - Validate file extension
 - Validate file size
 - Parse file after upload
@@ -329,23 +323,19 @@ Users can upload a caption file for QA.
 - Show upload progress or loading state
 - Do not require video upload
 
-### Acceptance Criteria
-
+**Acceptance Criteria:**
 - User can upload a valid SRT file.
 - User can upload a valid VTT file.
 - Invalid files show a readable error.
 - Unsupported files do not start a lint run.
-- Uploaded content is not logged in application logs.
 
 ---
 
-## 10.2 Parse Captions
-
-### Description
+### 10.2 Parse Captions
 
 The system parses captions into normalized internal cue objects.
 
-### Internal Cue Shape
+**Internal Cue Shape:**
 
 ```ts
 type CaptionCue = {
@@ -358,18 +348,18 @@ type CaptionCue = {
 };
 ```
 
-### Requirements
+**Parser Warning Codes:**
 
-- Parse cue index if present.
-- Parse start and end timestamps.
-- Preserve original text.
-- Preserve cue order.
-- Normalize timestamps to milliseconds.
-- Detect malformed cues.
-- Return parser warnings where possible.
+| Code | Meaning |
+|---|---|
+| `MALFORMED_CUE` | Cue block structure is invalid |
+| `MALFORMED_TIMESTAMP` | Timestamp could not be parsed |
+| `EMPTY_CUE` | Cue has no text content |
+| `UNSUPPORTED_FORMAT` | File format is not SRT or VTT |
 
-### Acceptance Criteria
+Parser warnings that are not `UNSUPPORTED_FORMAT` are passed to the lint engine and surfaced as `STRUCT.MALFORMED_CUE` or `STRUCT.MISSING_TIMESTAMP` findings.
 
+**Acceptance Criteria:**
 - Parser returns normalized cue list.
 - Parser identifies malformed timestamps.
 - Parser handles multi-line captions.
@@ -378,92 +368,74 @@ type CaptionCue = {
 
 ---
 
-## 10.3 Platform Presets
-
-### Description
+### 10.3 Platform Presets
 
 Users can choose a preset before running QA.
 
-### Initial Presets
+**Implemented Presets:**
 
-- Default
-- TikTok
-- Instagram
-- YouTube Shorts
+| Preset | Max CPL | Max Lines | Max CPS | Min Duration | Max Duration |
+|---|---|---|---|---|---|
+| Default | 42 | 2 | 20 | 900 ms | 7,000 ms |
+| TikTok | 32 | 2 | 17 | 900 ms | 5,000 ms |
+| Instagram | 34 | 2 | 18 | 900 ms | 5,500 ms |
+| YouTube Shorts | 36 | 2 | 18 | 900 ms | 6,000 ms |
 
-### Requirements
+These are CaptionLint presets — not official platform requirements. Do not market as such.
 
-Each preset should define:
-
-- max characters per line
-- max lines per cue
-- max characters per second
-- min cue duration
-- max cue duration
-- vocabulary behavior
-- severity map
-
-### Important Constraint
-
-Do not market these as official platform rules unless verified. They are practical CaptionLint presets based on product defaults.
-
-### Acceptance Criteria
-
+**Acceptance Criteria:**
 - User can select a preset.
 - Selected preset affects lint findings.
-- Presets are stored as configuration.
-- Presets are testable.
-- Adding a future preset does not require changing UI logic deeply.
+- Presets are stored as configuration in `packages/config`.
+- Presets are independently testable.
 
 ---
 
-## 10.4 Run Lint Checks
-
-### Description
+### 10.4 Run Lint Checks
 
 The system checks parsed captions against selected rules.
 
-### Initial Rule Categories
-
-- readability
-- timing
-- structure
-- vocabulary
-- preset compatibility
-
-### Initial Rules
+**Implemented Rules:**
 
 #### Readability
 
-- max characters per line
-- max lines per cue
-- max characters per second
+| Rule Code | Description | Default Severity |
+|---|---|---|
+| `READABILITY.CPL.MAX` | Line exceeds max characters per line | WARN |
+| `READABILITY.LINES.MAX` | Cue has too many lines | WARN |
+| `READABILITY.CPS.MAX` | Characters per second exceeds limit | WARN |
 
 #### Timing
 
-- min duration
-- max duration
-- overlapping cue detection
+| Rule Code | Description | Default Severity |
+|---|---|---|
+| `TIMING.DURATION.MIN` | Cue is too short to read | WARN |
+| `TIMING.DURATION.MAX` | Cue stays on screen too long | WARN |
+| `TIMING.OVERLAP` | Cue overlaps with the next cue | ERROR |
 
 #### Structure
 
-- empty cue text
-- malformed cue
-- missing timestamp
-- duplicate cue index if relevant
+| Rule Code | Description | Default Severity |
+|---|---|---|
+| `STRUCT.EMPTY_TEXT` | Cue has no visible text | ERROR |
+| `STRUCT.MALFORMED_CUE` | Cue block could not be parsed | ERROR |
+| `STRUCT.MISSING_TIMESTAMP` | Cue timestamp is missing or invalid | ERROR |
+| `STRUCT.DUPLICATE_INDEX` | Cue index appears more than once | WARN |
 
 #### Vocabulary
 
-- protected term split across lines
-- forbidden term warning later
+| Rule Code | Description | Default Severity |
+|---|---|---|
+| `VOCAB.SPLIT.PROTECTED` | Protected term split across lines | ERROR |
 
-### Finding Shape
+**Finding Shape:**
 
 ```ts
 type LintFinding = {
   id: string;
   runId: string;
   ruleCode: string;
+  category: "readability" | "timing" | "structure" | "vocabulary" | "preset";
   severity: "PASS" | "WARN" | "ERROR";
   cueIndex?: number;
   startMs?: number;
@@ -474,416 +446,373 @@ type LintFinding = {
 };
 ```
 
-### Acceptance Criteria
-
+**Acceptance Criteria:**
 - Lint engine produces deterministic findings.
 - Same input + same preset + same engine version returns same output.
-- Findings have severity, rule code, and readable message.
 - Unit tests exist for each rule.
 
 ---
 
-## 10.5 Lint Results Page
-
-### Description
+### 10.5 Lint Results Page
 
 The Lint Results page is the core product screen.
 
-### Layout
+**Layout:**
+- Left panel: findings list filtered by severity/category
+- Right panel: caption preview with highlighted cues
+- Top: run summary (pass/warn/error counts)
+- Export action in findings panel
 
-Desktop:
-- left panel: findings list
-- right panel: caption preview
-- top: run summary
-- bottom/right: export actions
+**URL patterns:**
+- `/results` — guest in-memory results
+- `/results/local/[runId]` — guest localStorage results
+- `/results/[runId]` — API-backed results (authenticated)
 
-Mobile:
-- summary first
-- findings list
-- expandable cue preview
-- export button visible
-
-### Required UI States
-
-- parsing
-- lint running
-- passed
-- warnings found
-- errors found
-- export ready
-- export failed
-
-### Findings UI
-
-Each finding should show:
-
-- severity badge
-- line/cue reference
+**Findings UI shows:**
+- severity badge (PASS / WARN / ERROR)
+- rule category
+- cue reference
 - rule message
-- short explanation
 - suggested fix if available
 
-### Acceptance Criteria
-
+**Acceptance Criteria:**
 - User can see total warnings/errors.
 - User can filter by severity.
 - User can click a finding and locate relevant cue.
-- User can distinguish WARN from ERROR.
 - User can proceed to export when allowed.
 
 ---
 
-## 10.6 Suggested Fixes
+### 10.6 Suggested Fixes
 
-### Description
+Some findings include safe suggested fixes.
 
-Some findings can include safe suggested fixes.
+**Implemented Safe Fixes:**
+- rebalance lines within max line length
+- merge broken protected word segments across lines
+- protect vocabulary term from line splits
 
-### MVP Safe Fixes
-
-- adjust line breaks for protected terms
-- merge broken protected word segments
-- rebalance lines within max line length where safe
-- remove empty cues if clearly empty
-- fix obvious duplicate spaces
-
-### Not Safe for MVP
-
+**Not safe for MVP:**
 - rewrite caption meaning
 - change spoken text
 - translate text
 - infer missing content
 - adjust timing based on audio
 
-### Acceptance Criteria
-
+**Acceptance Criteria:**
 - Suggested fixes are shown before export.
 - System does not silently change meaning.
 - User can download fixed output.
-- Original file remains preserved in History.
+- Original file content is preserved in History.
 
 ---
 
-## 10.7 Export Fixed File
-
-### Description
+### 10.7 Export Fixed File
 
 Users can export the checked/fixed caption file.
 
-### Requirements
+**Requirements:**
+- Export in the same format as the uploaded file
+- Preserve timestamps unless a fix explicitly alters timing
+- Preserve original filename with a `.captionlint.<preset>` suffix
+- Allow download after lint run
 
-- Export as same format as uploaded where possible.
-- Preserve timestamps unless the selected fix explicitly changes timing.
-- Preserve original file name with suffix.
-- Allow download after lint run.
-- Record export in History.
-
-### Filename Examples
+**Filename pattern:**
 
 ```txt
 my-video.captionlint.tiktok.srt
 my-video.captionlint.instagram.vtt
 ```
 
-### Acceptance Criteria
-
+**Acceptance Criteria:**
 - User can download fixed file.
 - Exported SRT opens in common subtitle tools.
 - Exported VTT follows WebVTT basics.
-- Download failure shows readable error.
 
 ---
 
-## 10.8 Vocabulary Rules
+### 10.8 Vocabulary Rules
 
-### Description
+Users create protected terms that must not break across caption lines.
 
-Users can create protected terms that should not break across caption lines.
+**Free plan:** 5 terms maximum (matches default seeded terms).
+**Pro / Team:** unlimited terms.
 
-### Requirements
-
+**Requirements:**
 - Add term
 - Remove term
 - View term list
-- Use terms during lint
-- Support project/workspace scope later
-- MVP exact matching
-- Future: case sensitivity and wildcard rules
+- Terms used during lint run
+- MVP: exact match (case-insensitive via normalized comparison)
 
-### Acceptance Criteria
+**Default terms seeded:** `ChatGPT`, `OpenAI`, `Midjourney`, `Canva`, `YouTube Shorts`
 
+**Acceptance Criteria:**
 - User can add `ChatGPT`.
-- System flags `ChatG- PT`.
-- System suggests keeping `ChatGPT` intact.
-- Vocabulary list persists.
+- System flags `ChatG- PT` as a vocabulary split error.
+- System suggests keeping `ChatGPT` intact on one line.
+- Vocabulary list persists across sessions.
 - Vocabulary Rules affect future lint runs.
 
 ---
 
-## 10.9 History
-
-### Description
+### 10.9 History
 
 History stores previous lint runs and exported fixes.
 
-### Requirements
-
+**Requirements:**
 - List previous lint runs
-- Show filename
-- Show preset used
-- Show date
-- Show summary counts
-- Download previous output
-- Re-fix with another preset
+- Show filename, preset, date, summary counts
+- Download previous exported output
+- Re-fix with another preset (Pro / Team)
 - Search by filename
 - Filter by preset
+- Demo runs shown for unauthenticated users
 
-### Acceptance Criteria
+**Guest behavior:** history stored in browser localStorage. Demo runs are pre-seeded.
 
+**Authenticated behavior:** history persisted to `history_items` table in PostgreSQL.
+
+**Acceptance Criteria:**
 - User can find a previous run.
-- User can re-fix past caption using a different preset.
-- User does not need to upload the same caption again.
-- History is described as workflow memory, not compliance tracking.
+- User can re-fix past caption using a different preset (Pro / Team).
+- User does not need to re-upload the same caption.
+- Demo runs are visually marked with a `demo` badge.
 
 ---
 
-## 10.10 Authentication
+### 10.10 Authentication
 
-### Description
+**Implemented auth providers (via better-auth):**
+- Email / password
+- GitHub OAuth
+- Google OAuth
 
-MVP can support lightweight authentication or free no-login first run.
+**On sign-up:** a personal organization is auto-created and the user is added as `owner`.
 
-### Recommended MVP
+**No-login trial:** upload, lint, and export all work without an account. History and re-fix require a Pro/Team plan account.
 
-- No-login trial for first use if technically feasible
-- Google login
-- Email login or magic link
-- GitHub login optional later
-
-### Acceptance Criteria
-
-- User can try the product with low friction.
-- User can save History only when authenticated.
+**Acceptance Criteria:**
+- User can register with email/password.
+- User can sign in with GitHub.
+- User can sign in with Google.
 - Auth does not block basic product understanding.
+- Session persists across page reloads.
+
+---
+
+### 10.11 Contact Page
+
+Users can submit general inquiries through a contact form.
+
+**Fields:** Full Name, Email Address, Subject, Message (min 10 chars)
+
+**Delivery:** Email sent via Resend to `hello@captionlint.com` with sender address as `Reply-To`.
+
+**Rate limiting:** 3 submissions per IP per hour (sliding window). Returns 429 with `Retry-After` header.
+
+**Error handling:**
+- Client-side validation errors shown inline before submit
+- 429 response: amber warning banner, submit button disabled until page refresh
+- 5xx response: red error banner, submit button re-enabled for retry
+- 422 response: server validation message shown inline
+
+**Acceptance Criteria:**
+- Valid submission sends email via Resend.
+- Rate-limited submissions show amber warning (not red error).
+- All form fields are disabled while sending.
+- Successful submission shows confirmation with sender email.
 
 ---
 
 ## 11. Technical Requirements
 
-## 11.1 Architecture
+### 11.1 Architecture
 
-Preferred stack:
+**Confirmed stack:**
 
 ```txt
-Frontend: Next.js + React + TypeScript
+Frontend:    Next.js 15 + React + TypeScript
 Backend API: Fastify + TypeScript
-Worker: BullMQ + Redis
-Database: PostgreSQL
-Storage: S3-compatible object storage
-Monorepo: pnpm workspace or Turborepo-style
+Worker:      BullMQ + Redis
+Database:    PostgreSQL (Drizzle ORM)
+Auth:        better-auth (email/password + GitHub + Google OAuth)
+Email:       Resend (contact form)
+Analytics:   PostHog
+Testing:     Playwright (E2E) + Vitest (unit)
+Monorepo:    pnpm workspaces
 ```
 
-Recommended structure:
+**Monorepo structure:**
 
 ```txt
 apps/
-  web/
-  api/
-  worker/
+  web/          Next.js frontend
+  api/          Fastify REST API
+  worker/       BullMQ lint processor
 
 packages/
-  caption-parser/
-  lint-engine/
-  shared-types/
-  config/
+  caption-parser/   SRT/VTT parser
+  lint-engine/      Deterministic lint rules
+  config/           Presets and severity maps
+  shared-types/     TypeScript types shared across packages
+  database/         Drizzle schema + migrations
+  api-client/       Typed API client for web → API calls
 ```
 
-### Architecture Principles
-
-- Keep lint engine independent.
-- Keep parser independent.
-- Avoid heavy processing in Next.js route handlers.
-- Use worker for long-running lint/export jobs.
-- Keep MVP simple but future-ready.
+**Architecture principles:**
+- Lint engine is fully independent of UI and API.
+- Parser is fully independent of UI and API.
+- Guest users get a zero-friction browser-local path.
+- Authenticated users get API-backed persistence.
+- Worker handles async lint jobs — Next.js route handlers do not block on lint execution.
 
 ---
 
-## 11.2 Data Model
+### 11.2 Data Model
 
-### User
+**Core types (`packages/shared-types`):**
 
 ```ts
-type User = {
-  id: string;
-  email: string;
-  name?: string;
-  createdAt: string;
+type CaptionCue = {
+  index: number;
+  startMs: number;
+  endMs: number;
+  text: string;
+  lines: string[];
+  raw?: string;
 };
-```
 
-### Workspace
-
-```ts
-type Workspace = {
-  id: string;
-  name: string;
-  ownerUserId: string;
-  plan: "FREE" | "PRO" | "TEAM";
-  createdAt: string;
+type ParserWarning = {
+  code: "MALFORMED_CUE" | "MALFORMED_TIMESTAMP" | "EMPTY_CUE" | "UNSUPPORTED_FORMAT";
+  message: string;
+  cueIndex?: number;
+  raw?: string;
 };
-```
 
-### Asset
-
-```ts
-type Asset = {
-  id: string;
-  workspaceId: string;
-  filename: string;
+type ParseResult = {
   format: "SRT" | "VTT";
-  storageKey: string;
-  checksum: string;
-  durationMs?: number;
-  createdAt: string;
+  cues: CaptionCue[];
+  warnings: ParserWarning[];
 };
-```
 
-### Ruleset
-
-```ts
-type Ruleset = {
-  id: string;
-  workspaceId?: string;
-  name: string;
-  preset: "DEFAULT" | "TIKTOK" | "INSTAGRAM" | "YOUTUBE_SHORTS";
-  version: number;
-  rulesJson: Record<string, unknown>;
-  createdAt: string;
+type CaptionPreset = {
+  id: PresetId;
+  label: string;
+  description: string;
+  maxCharactersPerLine: number;
+  maxLinesPerCue: number;
+  maxCharactersPerSecond: number;
+  minCueDurationMs: number;
+  maxCueDurationMs: number;
+  severityMap: Record<string, Severity>;
 };
-```
 
-### LintRun
-
-```ts
-type LintRun = {
+type LintFinding = {
   id: string;
-  assetId: string;
-  rulesetId: string;
-  status: "QUEUED" | "RUNNING" | "PASSED" | "FAILED" | "ERROR";
-  engineVersion: string;
-  summaryJson: Record<string, unknown>;
-  createdAt: string;
-  finishedAt?: string;
-};
-```
-
-### Finding
-
-```ts
-type Finding = {
-  id: string;
-  lintRunId: string;
+  runId: string;
   ruleCode: string;
+  category: RuleCategory;
   severity: "PASS" | "WARN" | "ERROR";
   cueIndex?: number;
   startMs?: number;
   endMs?: number;
   message: string;
-  detailsJson?: Record<string, unknown>;
-  suggestedFixJson?: Record<string, unknown>;
+  details?: Record<string, unknown>;
+  suggestedFix?: SuggestedFix;
 };
-```
 
-### VocabularyTerm
+type LintRun = {
+  id: string;
+  filename: string;
+  format: "SRT" | "VTT";
+  presetId: PresetId;
+  engineVersion: string;
+  status: "QUEUED" | "RUNNING" | "PASSED" | "FAILED" | "ERROR";
+  cues: CaptionCue[];
+  findings: LintFinding[];
+  summary: LintSummary;
+  createdAt: string;
+  finishedAt?: string;
+};
 
-```ts
 type VocabularyTerm = {
   id: string;
-  workspaceId: string;
-  projectId?: string;
   term: string;
   caseSensitive: boolean;
   createdAt: string;
+  workspaceId?: string;
 };
 ```
 
-### Export
+**Database tables (`packages/database`):**
 
-```ts
-type Export = {
-  id: string;
-  lintRunId: string;
-  format: "SRT" | "VTT" | "JSON";
-  storageKey: string;
-  createdAt: string;
-};
-```
-
-### HistoryItem
-
-History can be derived from LintRun + Export, but a dedicated table may simplify MVP UX.
-
-```ts
-type HistoryItem = {
-  id: string;
-  workspaceId: string;
-  assetId: string;
-  lintRunId: string;
-  exportId?: string;
-  filename: string;
-  preset: string;
-  summaryJson: Record<string, unknown>;
-  createdAt: string;
-};
-```
+| Table | Purpose |
+|---|---|
+| `user`, `session`, `account` | better-auth auth tables |
+| `organization`, `member` | Workspace / org (auto-created on sign-up) |
+| `lint_runs` | Lint run records with status, summary, export content |
+| `findings` | Individual lint findings per run |
+| `assets` | Uploaded caption file content + metadata |
+| `exports` | Generated export records per lint run |
+| `history_items` | Denormalized history for fast UX queries |
+| `vocabulary` | Per-organization vocabulary terms |
 
 ---
 
 ## 12. API Requirements
 
+All routes served by the Fastify API at `apps/api`. Auth handled by better-auth's `/api/auth/*` wildcard.
+
 ### Assets
 
 ```http
-POST /assets
-GET /assets/:id
+POST   /assets          Upload caption file content
+GET    /assets/:id      Fetch asset metadata (no content)
 ```
 
 ### Lint Runs
 
 ```http
-POST /lint-runs
-GET /lint-runs/:id
-GET /lint-runs/:id/findings
-POST /lint-runs/:id/export
+POST   /lint-runs              Start a lint run (enqueues BullMQ job)
+GET    /lint-runs/:id          Poll run status and summary
+GET    /lint-runs/:id/findings Fetch all findings for a run
+POST   /lint-runs/:id/export   Generate and store export file
 ```
 
 ### Vocabulary
 
 ```http
-GET /vocabulary
-POST /vocabulary
-DELETE /vocabulary/:id
+GET    /vocabulary             List vocabulary terms for organization
+POST   /vocabulary             Add a term
+DELETE /vocabulary/:id         Remove a term
 ```
 
 ### History
 
 ```http
-GET /history
-POST /history/:id/refix
+GET    /history                List history items for organization
+POST   /history/:id/refix      Re-run lint with a different preset
 ```
 
 ### Rulesets
 
 ```http
-GET /rulesets
-GET /rulesets/:id
+GET    /rulesets               List all available presets
+GET    /rulesets/:id           Get a single preset
+```
+
+### Contact (Next.js API route)
+
+```http
+POST   /api/contact            Submit contact form (rate-limited: 3/hr/IP)
 ```
 
 ---
 
 ## 13. UX Requirements
 
-## 13.1 Design Direction
+### 13.1 Design Direction
 
 The product should feel like a modern developer/SaaS tool:
 
@@ -894,24 +823,20 @@ The product should feel like a modern developer/SaaS tool:
 - credible
 - not flashy
 
-Inspired by:
-- Linear
-- Vercel
-- GitHub
+Inspired by: Linear, Vercel, GitHub. Do not copy these products directly.
 
-Do not copy these products directly.
+### 13.2 Visual Rules
 
-## 13.2 Visual Rules
-
-Use:
-- dark backgrounds
-- subtle 1px borders
+**Use:**
+- dark backgrounds (`#0B0F14` body, `#111827` cards)
+- subtle 1px borders (`#1F2937`)
 - flat colors
+- green accent (`#22C55E`) for primary actions and success states
 - meaningful badges
 - real lint data
 - clear spacing
 
-Avoid:
+**Avoid:**
 - gradients
 - glassmorphism
 - fake charts
@@ -919,26 +844,57 @@ Avoid:
 - floating abstract cards
 - decorative clutter
 
-## 13.3 Core Components
+### 13.3 Implemented Pages
 
-- AppShell
-- Sidebar
-- TopNav
-- UploadDropzone
-- PresetSelector
-- LintSummary
-- SeverityBadge
-- FindingList
-- CaptionPreview
-- ExportButton
-- VocabularyTable
-- HistoryTable
-- EmptyState
-- LoadingState
+| Route | Description |
+|---|---|
+| `/` | Public landing page |
+| `/features` | Features overview |
+| `/pricing` | Pricing tiers (Free / Pro / Team) |
+| `/contact` | Contact form |
+| `/terms` | Terms of Service |
+| `/privacy` | Privacy Policy |
+| `/sign-in` | Sign-in (email/password, GitHub, Google) |
+| `/create-account` | Registration |
+| `/onboarding/workspace-setup` | Post-signup workspace name |
+| `/onboarding/ruleset` | Post-signup vocabulary setup |
+| `/onboarding/team` | Post-signup team invite |
+| `/onboarding/success` | Onboarding complete |
+| `/dashboard` | Authenticated home / quick upload |
+| `/upload` | Upload + preset selection |
+| `/upload/runs/[runId]` | Re-fix a previous run |
+| `/results` | Lint results (guest) |
+| `/results/local/[runId]` | Lint results by local runId |
+| `/results/[runId]` | Lint results (API-backed) |
+| `/rulesets` | Vocabulary Rules management |
+| `/history` | History list |
+| `/history/[runId]` | History run detail |
+| `/settings` | User and plan settings |
+| `/docs` | Documentation |
+| `/projects` | Projects list |
+| `/logged-out` | Sign-out confirmation |
 
 ---
 
-## 14. Success Metrics
+## 14. Pricing & Plans
+
+| | Free | Pro | Team |
+|---|---|---|---|
+| Price | $0 | $29/mo | $99/mo |
+| Caption minutes/mo | 100 | 1,000 | 5,000 |
+| Vocabulary terms | 5 | Unlimited | Unlimited |
+| Seats | 1 | 1 | Up to 5 |
+| History re-fix | — | ✅ | ✅ |
+| Export downloads | ✅ | ✅ | ✅ |
+
+**Plan limit enforcement:**
+- Minutes estimated from cue count × `secsPerCue` constant (default: 5 s/cue)
+- Vocabulary terms enforced at add-time in the Rulesets page
+- Free plan defaults configurable via `NEXT_PUBLIC_FREE_PLAN_*` environment variables
+
+---
+
+## 15. Success Metrics
 
 ### Activation
 
@@ -973,27 +929,28 @@ Avoid:
 
 ---
 
-## 15. MVP Acceptance Criteria
+## 16. MVP Acceptance Criteria
 
 The MVP is considered usable when:
 
-- User can upload an SRT file.
-- User can upload a VTT file.
-- User can choose Default/TikTok/Instagram/YouTube Shorts preset.
-- System can parse and run lint checks.
-- System shows PASS/WARN/ERROR results.
-- System detects line length issues.
-- System detects CPS/readability issues.
-- System detects overlap issues.
-- System detects protected term splits.
-- User can export fixed file.
-- User can see previous runs in History.
-- User can re-fix previous captions with a different preset.
-- Basic tests exist for parser and lint engine.
+- [x] User can upload an SRT file.
+- [x] User can upload a VTT file.
+- [x] User can choose Default / TikTok / Instagram / YouTube Shorts preset.
+- [x] System can parse and run lint checks.
+- [x] System shows PASS/WARN/ERROR results.
+- [x] System detects line length issues.
+- [x] System detects CPS/readability issues.
+- [x] System detects overlap issues.
+- [x] System detects protected term splits.
+- [x] User can export fixed file.
+- [x] User can see previous runs in History.
+- [x] User can re-fix previous captions with a different preset.
+- [x] Basic tests exist for parser and lint engine.
+- [x] E2E tests cover all major user flows.
 
 ---
 
-## 16. Risks & Mitigations
+## 17. Risks & Mitigations
 
 ### Risk 1: Existing free tools are powerful
 
@@ -1018,8 +975,8 @@ Mitigation:
 ### Risk 4: Compliance overclaiming
 
 Mitigation:
-- use “QA” and “accessibility-aware”
-- avoid “certified” or “guaranteed compliance”
+- use "QA" and "accessibility-aware"
+- avoid "certified" or "guaranteed compliance"
 - treat compliance reports as future scope
 
 ### Risk 5: Platform presets misunderstood as official rules
@@ -1029,11 +986,19 @@ Mitigation:
 - include configurable thresholds later
 - avoid official claim unless verified
 
+### Risk 6: In-memory rate limiter does not scale
+
+The contact form rate limiter uses a module-level `Map` — effective for single-instance deployments only.
+
+Mitigation:
+- acceptable for MVP single-server deployment
+- replace with Redis-backed rate limiter before horizontal scaling
+
 ---
 
-## 17. Release Plan
+## 18. Release Plan
 
-### Phase 0: Foundation
+### Phase 0: Foundation ✅
 
 - repo structure
 - parser package
@@ -1041,76 +1006,110 @@ Mitigation:
 - shared types
 - base UI shell
 
-### Phase 1: Core MVP
+### Phase 1: Core MVP ✅
 
 - upload SRT/VTT
 - platform presets
-- lint run
+- lint run (browser-local)
 - findings page
 - export
 
-### Phase 2: Workflow Features
+### Phase 2: Workflow Features ✅
 
 - Vocabulary Rules
 - History
 - re-fix with another preset
 - improved result UI
+- contact page + Resend email delivery
+- terms, privacy, and pricing pages
+- better-auth (email/password + GitHub + Google OAuth)
+- API backend (Fastify + BullMQ + PostgreSQL)
 
 ### Phase 3: Monetization
 
-- auth
-- usage limits
-- pricing page
-- paid plan gating
-- basic billing
+- billing integration (Stripe)
+- usage tracking against plan limits
+- upgrade flow
+- plan enforcement gates in UI and API
 
 ### Phase 4: Expansion
 
 - batch processing
 - project/workspace organization
 - team roles
-- API
+- public API
 - compliance-ready reports
 
 ---
 
-## 18. Open Questions
+## 19. Resolved Open Questions
 
-1. Should MVP allow first lint run without login?
-2. Should processing happen browser-local first, server-side first, or hybrid?
-3. What are the exact default thresholds for each preset?
-4. Should Vocabulary Rules be global per user or per project?
-5. Should History store original files, fixed files, or both?
-6. Should exports include JSON reports in MVP?
-7. Should the app expose before/after diff in Phase 1 or Phase 2?
-8. What is the first paid plan limit: minutes, runs, or exports?
-9. Should free usage be limited by file count or caption duration?
-10. Should “Re-fix” create a new lint run or update the previous one?
+1. **Should MVP allow first lint run without login?**
+   Yes — browser-local lint run works without an account.
+
+2. **Should processing happen browser-local, server-side, or hybrid?**
+   Hybrid — guests run browser-local; authenticated users run server-side via BullMQ worker.
+
+3. **What are the exact default thresholds for each preset?**
+   See Section 10.3 preset table.
+
+4. **Should Vocabulary Rules be global per user or per project?**
+   Global per organization for MVP. Per-project scope deferred.
+
+5. **Should History store original files, fixed files, or both?**
+   Both — asset table stores original content, exports table stores fixed output.
+
+6. **Should exports include JSON reports in MVP?**
+   SRT/VTT export only for MVP. JSON export format supported in the API but not exposed in the UI.
+
+7. **What is the first paid plan limit: minutes, runs, or exports?**
+   Minutes per month (estimated from cue count × 5 seconds per cue).
+
+8. **Should free usage be limited by file count or caption duration?**
+   Caption duration (minutes), estimated from cue count.
+
+9. **Should "Re-fix" create a new lint run or update the previous one?**
+   Creates a new lint run.
 
 ---
 
-## 19. Agent / Implementation Notes
+## 20. Open Questions
+
+1. Should the free plan show re-fix UI with an upgrade prompt, or hide it entirely?
+2. Should vocabulary terms sync from localStorage (guest) to account when a user first signs up?
+3. What is the right upgrade trigger — block at the limit, warn before it, or allow some overage?
+4. Should the contact form send an auto-reply email to the user?
+5. Should the results page show a before/after diff view in Phase 3?
+
+---
+
+## 21. Agent / Implementation Notes
 
 Before implementing, coding agents must:
 
 - inspect existing code
 - use Context7 for library/framework docs
 - use web search for current standards/security-sensitive work
-- create a short Research Brief
 - identify API/DB/UI/test impact
 - implement the smallest safe change
-- update tests and docs
+- update tests
 
-This keeps implementation aligned with `CLAUDE.md` and `AGENTS.md`.
+**Key package entry points:**
 
----
+| Package | Path |
+|---|---|
+| Lint engine | `packages/lint-engine/src/index.ts` |
+| Caption parser | `packages/caption-parser/src/index.ts` |
+| Config / presets | `packages/config/src/index.ts` |
+| Shared types | `packages/shared-types/src/index.ts` |
+| DB schema | `packages/database/src/schema/index.ts` |
+| API client | `packages/api-client/src/index.ts` |
 
-## 20. Source Inputs Used
+**Reusable patterns:**
 
-This PRD is based on:
-- CaptionLint product direction discussed in this project
-- `CLAUDE.md` or `CODEX.md`
-- `AGENTS.md`
-- competitive landscape analysis uploaded in this conversation
-- official WCAG guidance for captions
-- W3C WebVTT specification
+- `makeFinding()` — `packages/lint-engine/src/index.ts`
+- `severityFor()` — `packages/lint-engine/src/index.ts`
+- `DrizzleLintRunRepository` — `apps/api/src/repositories/lint-run.repository.ts`
+- `requireAuth` middleware — `apps/api/src/routes/lint-runs.ts`
+- `mergeAndSortRuns()` — `apps/web/lib/history-utils.ts`
+- `FREE_PLAN` limits — `apps/web/lib/plan-limits.ts`

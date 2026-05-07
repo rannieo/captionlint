@@ -1,12 +1,14 @@
 "use client";
 
 import { FormEvent, useState } from "react";
+import { usePostHog } from "posthog-js/react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 
 type Status = "idle" | "sending" | "success" | "error" | "rate-limited";
 
 export function ContactForm() {
+  const posthog = usePostHog();
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [subject, setSubject] = useState("");
@@ -26,11 +28,13 @@ export function ContactForm() {
     e.preventDefault();
     const validationError = validate();
     if (validationError) {
+      posthog.capture("contact_form_validation_failed", { error: validationError });
       setErrorMsg(validationError);
       setStatus("error");
       return;
     }
 
+    posthog.capture("contact_form_submitted", { subject: subject.trim() });
     setStatus("sending");
     setErrorMsg("");
 
@@ -41,6 +45,7 @@ export function ContactForm() {
     });
 
     if (res.ok) {
+      posthog.capture("contact_form_success");
       setStatus("success");
       setName("");
       setEmail("");
@@ -50,7 +55,13 @@ export function ContactForm() {
       const data = await res.json().catch(() => ({}));
       const msg = (data as { error?: string }).error ?? "Something went wrong. Please try again.";
       setErrorMsg(msg);
-      setStatus(res.status === 429 ? "rate-limited" : "error");
+      if (res.status === 429) {
+        posthog.capture("contact_form_rate_limited");
+        setStatus("rate-limited");
+      } else {
+        posthog.capture("contact_form_error", { status: res.status, error: msg });
+        setStatus("error");
+      }
     }
   }
 
