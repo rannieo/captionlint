@@ -81,7 +81,7 @@ export function RecentRunsTable() {
                     variant="link"
                     size="xs"
                     className="px-0 text-zinc-400 hover:text-zinc-100"
-                    render={<Link href="/results" />}
+                    render={<Link href={run.lintRunId ? `/results/${run.lintRunId}` : "/results"} />}
                     nativeButton={false}
                   >
                     View <span data-icon="inline-end">→</span>

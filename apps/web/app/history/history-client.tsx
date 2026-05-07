@@ -1,14 +1,13 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { WorkspaceShell } from "../_components/workspace-shell";
 import { WorkspaceTopbar } from "../_components/workspace-topbar";
 import type { HistoryRun } from "@/lib/history-data";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import {
   Table,
@@ -21,14 +20,27 @@ import {
 import { readHistoryRuns } from "@/lib/workflow-storage";
 import { mergeAndSortRuns } from "@/lib/history-utils";
 import { authClient } from "@/lib/auth-client";
-import { listHistory, refixHistory, type HistoryItem } from "@repo/api-client";
+import { listHistory, refixHistory, exportLintRun, type HistoryItem } from "@repo/api-client";
+
+const PRESET_LABELS: Record<string, string> = {
+  default: "Default",
+  tiktok: "TikTok",
+  instagram: "Instagram",
+  "youtube-shorts": "YouTube Shorts",
+};
+
+function formatDate(value: string): string {
+  const d = new Date(value);
+  if (Number.isNaN(d.getTime())) return value;
+  return d.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
+}
 
 type HistoryClientProps = {
   runs: HistoryRun[];
 };
 
 function parseHistoryDate(value: string): number {
-  const parsed = new Date(value.replace(" ", "T")).getTime();
+  const parsed = new Date(value.replace(" ", "T") + (value.includes("Z") ? "" : "Z")).getTime();
   return Number.isNaN(parsed) ? 0 : parsed;
 }
 
@@ -41,7 +53,7 @@ function apiItemToHistoryRun(item: HistoryItem): HistoryRun {
     isApiRun: true,
     file: item.filename,
     presets: [item.preset],
-    date: item.createdAt.replace("T", " ").slice(0, 19),
+    date: item.createdAt,
     autoFixed: total - pending,
     pending,
     pendingLabel: pending === 0 ? "0 Violations Found" : `${pending} Pending Review`,
@@ -55,55 +67,86 @@ export function HistoryClient({ runs }: HistoryClientProps) {
   const [orgId, setOrgId] = useState<string | undefined>();
   const [browserRuns, setBrowserRuns] = useState<HistoryRun[]>([]);
   const [apiRuns, setApiRuns] = useState<HistoryRun[]>([]);
+  const [isLoading, setIsLoading] = useState(false);
   const [query, setQuery] = useState("");
   const [presetFilter, setPresetFilter] = useState("all");
   const [dateFilter, setDateFilter] = useState<"all" | "7d">("all");
-  const allRuns = useMemo(() => mergeAndSortRuns(browserRuns, [...apiRuns, ...runs]), [browserRuns, apiRuns, runs]);
 
   useEffect(() => {
     setBrowserRuns(readHistoryRuns());
   }, []);
 
+  // Resolve orgId once when session is available
   useEffect(() => {
     if (!session?.user) return;
     authClient.organization.list().then((result) => {
-      const orgs = result.data;
-      const id = orgs?.[0]?.id;
-      if (!id) return;
-      setOrgId(id);
-      listHistory(id).then((items) => setApiRuns(items.map(apiItemToHistoryRun))).catch(() => {});
+      const id = result.data?.[0]?.id;
+      if (id) setOrgId(id);
     }).catch(() => {});
   }, [session?.user]);
 
-  const presetOptions = useMemo(
-    () => Array.from(new Set(allRuns.flatMap((run) => run.presets))).sort((a, b) => a.localeCompare(b)),
-    [allRuns]
+  // Re-fetch from API whenever orgId, search query, or preset filter changes
+  const fetchApiRuns = useCallback((id: string, filename?: string, preset?: string) => {
+    setIsLoading(true);
+    listHistory(id, {
+      filename: filename || undefined,
+      preset: preset && preset !== "all" ? preset : undefined,
+    })
+      .then((items) => setApiRuns(items.map(apiItemToHistoryRun)))
+      .catch(() => {})
+      .finally(() => setIsLoading(false));
+  }, []);
+
+  // Debounce query changes; immediate on preset/orgId changes
+  useEffect(() => {
+    if (!orgId) return;
+    const delay = query ? 300 : 0;
+    const timer = setTimeout(() => fetchApiRuns(orgId, query, presetFilter), delay);
+    return () => clearTimeout(timer);
+  }, [orgId, query, presetFilter, fetchApiRuns]);
+
+  const allRuns = useMemo(
+    () => mergeAndSortRuns(browserRuns, session?.user ? apiRuns : [...apiRuns, ...runs]),
+    [browserRuns, apiRuns, runs, session?.user],
   );
 
-  const newestRunDate = useMemo(() => {
-    return allRuns.reduce((latest, run) => Math.max(latest, parseHistoryDate(run.date)), 0);
-  }, [allRuns]);
+  // Preset options derived from all loaded runs (for browser runs; API runs are already server-filtered)
+  const presetOptions = useMemo(
+    () => Array.from(new Set(allRuns.flatMap((run) => run.presets))).sort((a, b) => a.localeCompare(b)),
+    [allRuns],
+  );
 
+  const hasActiveFilters = query.trim().length > 0 || presetFilter !== "all" || dateFilter !== "all";
+
+  // Date filter is client-side only (API doesn't support it); query/preset already applied server-side for API runs
   const filteredRuns = useMemo(() => {
+    const dateCutoffMs = Date.now() - 7 * 24 * 60 * 60 * 1000;
     const normalizedQuery = query.trim().toLowerCase();
-    const dateCutoffMs = newestRunDate - 7 * 24 * 60 * 60 * 1000;
 
     return allRuns.filter((run) => {
-      const matchesQuery = normalizedQuery.length === 0 || run.file.toLowerCase().includes(normalizedQuery);
+      const matchesQuery = !normalizedQuery || run.file.toLowerCase().includes(normalizedQuery);
       const matchesPreset = presetFilter === "all" || run.presets.includes(presetFilter);
-      const matchesDateWindow =
-        dateFilter === "all" || parseHistoryDate(run.date) >= dateCutoffMs;
-
-      return matchesQuery && matchesPreset && matchesDateWindow;
+      const matchesDate = dateFilter === "all" || parseHistoryDate(run.date) >= dateCutoffMs;
+      return matchesQuery && matchesPreset && matchesDate;
     });
-  }, [allRuns, dateFilter, newestRunDate, presetFilter, query]);
+  }, [allRuns, dateFilter, presetFilter, query]);
 
-  function downloadHistoryRun(run: HistoryRun) {
-    if (!run.downloadContent) return;
+  async function downloadHistoryRun(run: HistoryRun) {
     const format = run.format ?? (run.file.toLowerCase().endsWith(".vtt") ? "VTT" : "SRT");
     const extension = format.toLowerCase();
     const base = run.file.replace(/\.(srt|vtt)$/i, "");
-    const blob = new Blob([run.downloadContent], { type: format === "VTT" ? "text/vtt" : "text/plain" });
+
+    let content: string;
+    if (run.isApiRun && run.lintRunId) {
+      const result = await exportLintRun(run.lintRunId, format);
+      content = result.content;
+    } else if (run.downloadContent) {
+      content = run.downloadContent;
+    } else {
+      return;
+    }
+
+    const blob = new Blob([content], { type: format === "VTT" ? "text/vtt" : "text/plain" });
     const url = URL.createObjectURL(blob);
     const link = document.createElement("a");
     link.href = url;
@@ -116,7 +159,7 @@ export function HistoryClient({ runs }: HistoryClientProps) {
     if (!run.isApiRun) return;
     const presetId = run.presets[0] ?? "default";
     const result = await refixHistory(run.id, presetId);
-    router.push(`/results?runId=${result.runId}`);
+    router.push(`/results/${result.runId}`);
   }
 
   return (
@@ -138,22 +181,28 @@ export function HistoryClient({ runs }: HistoryClientProps) {
             </div>
             <div className="flex flex-wrap items-center gap-2">
               <div className="relative">
-                <span className="pointer-events-none absolute left-2 top-1/2 -translate-y-1/2 text-zinc-400">⌕</span>
+                <svg className="pointer-events-none absolute left-2 top-1/2 size-3.5 -translate-y-1/2 text-zinc-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="m21 21-5.197-5.197m0 0A7.5 7.5 0 1 0 5.196 5.196a7.5 7.5 0 0 0 10.607 10.607Z" />
+                </svg>
                 <Input
                   value={query}
                   onChange={(event) => setQuery(event.target.value)}
                   className="h-8 w-48 border-[#1F2937] bg-[#0B0F14] pl-7 font-mono text-xs md:w-56"
-                  placeholder="Filter by filename..."
+                  placeholder="Search by filename..."
                 />
+                {query && (
+                  <button
+                    type="button"
+                    onClick={() => setQuery("")}
+                    className="absolute right-2 top-1/2 -translate-y-1/2 text-zinc-500 hover:text-zinc-200"
+                    aria-label="Clear search"
+                  >
+                    <svg className="size-3.5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M6 18 18 6M6 6l12 12" />
+                    </svg>
+                  </button>
+                )}
               </div>
-              <Button
-                size="sm"
-                variant={dateFilter === "7d" ? "secondary" : "outline"}
-                className="h-8 border-[#1F2937] bg-[#111827] text-zinc-100"
-                onClick={() => setDateFilter((prev) => (prev === "7d" ? "all" : "7d"))}
-              >
-                {dateFilter === "7d" ? "Last 7 Days ✓" : "Last 7 Days"}
-              </Button>
               <Select value={presetFilter} onValueChange={(value) => setPresetFilter(value ?? "all")}>
                 <SelectTrigger className="h-8 w-40 border-[#1F2937] bg-[#111827] text-xs text-zinc-100">
                   <SelectValue placeholder="All Presets" />
@@ -162,82 +211,86 @@ export function HistoryClient({ runs }: HistoryClientProps) {
                   <SelectItem value="all">All Presets</SelectItem>
                   {presetOptions.map((preset) => (
                     <SelectItem key={preset} value={preset}>
-                      {preset}
+                      {PRESET_LABELS[preset] ?? preset}
                     </SelectItem>
                   ))}
                 </SelectContent>
               </Select>
+              <Button
+                size="sm"
+                variant={dateFilter === "7d" ? "secondary" : "outline"}
+                className="h-8 border-[#1F2937] bg-[#111827] text-zinc-100"
+                onClick={() => setDateFilter((prev) => (prev === "7d" ? "all" : "7d"))}
+              >
+                Last 7 Days{dateFilter === "7d" ? " ✓" : ""}
+              </Button>
+              {hasActiveFilters && (
+                <button
+                  type="button"
+                  onClick={() => { setQuery(""); setPresetFilter("all"); setDateFilter("all"); }}
+                  className="text-xs text-zinc-500 hover:text-zinc-200"
+                >
+                  Clear filters
+                </button>
+              )}
             </div>
           </div>
 
-          <div className="overflow-hidden rounded-lg border border-[#1F2937] bg-[#111827]">
+          <div className="w-full">
             <Table>
-              <TableHeader className="bg-[#1F2937]">
+              <TableHeader>
                 <TableRow className="border-b border-[#1F2937] hover:bg-transparent">
-                  <TableHead className="px-4 py-3 text-[11px] uppercase tracking-wider text-zinc-400">Filename</TableHead>
-                  <TableHead className="px-4 py-3 text-[11px] uppercase tracking-wider text-zinc-400">Platform Preset</TableHead>
-                  <TableHead className="px-4 py-3 text-[11px] uppercase tracking-wider text-zinc-400">Date Executed</TableHead>
-                  <TableHead className="px-4 py-3 text-[11px] uppercase tracking-wider text-zinc-400">Violations Fixed</TableHead>
-                  <TableHead className="px-4 py-3 text-right text-[11px] uppercase tracking-wider text-zinc-400">Actions</TableHead>
+                  <TableHead className="px-0 py-3 text-[11px] font-semibold uppercase tracking-wider text-zinc-500">Filename</TableHead>
+                  <TableHead className="px-4 py-3 text-[11px] font-semibold uppercase tracking-wider text-zinc-500">Preset</TableHead>
+                  <TableHead className="px-4 py-3 text-[11px] font-semibold uppercase tracking-wider text-zinc-500">Date</TableHead>
+                  <TableHead className="px-4 py-3 text-[11px] font-semibold uppercase tracking-wider text-zinc-500">Issues</TableHead>
+                  <TableHead className="px-0 py-3 text-right text-[11px] font-semibold uppercase tracking-wider text-zinc-500">Actions</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {filteredRuns.length > 0 ? (
                   filteredRuns.map((run) => (
-                    <TableRow key={run.id} className="border-b border-[#1F2937] hover:bg-[#0B0F14]">
-                      <TableCell className="px-4 py-3">
+                    <TableRow key={run.id} className="border-b border-[#1F2937] last:border-0 hover:bg-[#111827]/60">
+                      <TableCell className="px-0 py-3.5">
                         <div className="flex items-center gap-2">
-                          <span className={run.status === "fixed" ? "text-[#22c55e]" : "text-[#1F2937]"}>⬛</span>
+                          <span
+                            className="size-1.5 shrink-0 rounded-full"
+                            style={{
+                              background:
+                                run.status === "fixed" ? "#22c55e"
+                                : run.status === "review" ? "#ef4444"
+                                : "#4b5563",
+                            }}
+                          />
                           <span className="font-mono text-sm text-zinc-100">{run.file}</span>
                           {run.isDemo && (
-                            <Badge variant="outline" data-demo="true" className="h-auto rounded border-transparent bg-zinc-700 px-1.5 py-0.5 text-[10px] text-zinc-400">
-                              Demo
-                            </Badge>
+                            <span className="rounded bg-[#1F2937] px-1.5 py-0.5 font-mono text-[10px] text-zinc-500">demo</span>
                           )}
                         </div>
                       </TableCell>
-                      <TableCell className="px-4 py-3">
-                        <div className="flex flex-wrap gap-1">
-                          {run.presets.map((preset) => (
-                            <Badge
-                              key={preset}
-                              variant="outline"
-                              className="h-auto rounded border-transparent bg-[#1F2937] px-2 py-0.5 text-[10px] font-semibold text-zinc-300"
-                            >
-                              {preset}
-                            </Badge>
-                          ))}
-                        </div>
+                      <TableCell className="px-4 py-3.5">
+                        <span className="text-xs text-zinc-400">
+                          {run.presets.map((p) => PRESET_LABELS[p] ?? p).join(", ")}
+                        </span>
                       </TableCell>
-                      <TableCell className="px-4 py-3 font-mono text-xs text-zinc-400">{run.date}</TableCell>
-                      <TableCell className="px-4 py-3">
-                        <div className="flex items-center text-sm">
-                          <span
-                            className="mr-2 inline-block size-1.5 rounded-full"
-                            style={{
-                              background:
-                                run.status === "fixed"
-                                  ? "#22c55e"
-                                  : run.status === "review"
-                                    ? "#ef4444"
-                                    : "#6b7280",
-                            }}
-                          />
-                          <span className="font-mono text-xs text-zinc-200">{run.autoFixed} Auto-fixed</span>
-                          <span className="mx-2 text-zinc-600">|</span>
-                          <span className={run.status === "review" ? "font-mono text-xs text-[#ef4444]" : "font-mono text-xs text-zinc-400"}>
-                            {run.pendingLabel}
-                          </span>
-                        </div>
+                      <TableCell className="px-4 py-3.5 font-mono text-xs text-zinc-500">{formatDate(run.date)}</TableCell>
+                      <TableCell className="px-4 py-3.5">
+                        {run.status === "clean" ? (
+                          <span className="text-xs text-zinc-500">Clean</span>
+                        ) : run.status === "review" ? (
+                          <span className="text-xs text-[#ef4444]">{run.pending} to review</span>
+                        ) : (
+                          <span className="text-xs text-[#22c55e]">{run.autoFixed} fixed</span>
+                        )}
                       </TableCell>
-                      <TableCell className="px-4 py-3 text-right">
-                        <div className="flex justify-end gap-1">
+                      <TableCell className="px-0 py-3.5 text-right">
+                        <div className="flex justify-end gap-0.5">
                           {run.isApiRun ? (
                             <Button
                               type="button"
                               size="icon-sm"
                               variant="ghost"
-                              className="text-zinc-400 hover:text-[#22c55e]"
+                              className="size-7 text-zinc-500 hover:text-[#22c55e]"
                               title="Re-run"
                               onClick={() => refixApiRun(run)}
                             >
@@ -248,7 +301,7 @@ export function HistoryClient({ runs }: HistoryClientProps) {
                               type="button"
                               size="icon-sm"
                               variant="ghost"
-                              className="text-zinc-400 hover:text-[#22c55e]"
+                              className="size-7 text-zinc-500 hover:text-[#22c55e]"
                               render={<Link href={`/upload?runId=${encodeURIComponent(run.id)}`} />}
                               nativeButton={false}
                               title="Re-run"
@@ -260,7 +313,7 @@ export function HistoryClient({ runs }: HistoryClientProps) {
                               type="button"
                               size="icon-sm"
                               variant="ghost"
-                              className="cursor-not-allowed text-zinc-600 opacity-40"
+                              className="size-7 cursor-not-allowed text-zinc-700"
                               disabled
                               title="Demo run — upload the file to re-fix"
                             >
@@ -271,8 +324,8 @@ export function HistoryClient({ runs }: HistoryClientProps) {
                             type="button"
                             size="icon-sm"
                             variant="ghost"
-                            className="text-zinc-400 hover:text-zinc-100 disabled:opacity-40"
-                            disabled={!run.downloadContent}
+                            className="size-7 text-zinc-500 hover:text-zinc-100 disabled:opacity-30"
+                            disabled={!run.downloadContent && !(run.isApiRun && run.lintRunId)}
                             title="Download fixed file"
                             onClick={() => downloadHistoryRun(run)}
                           >
@@ -282,12 +335,12 @@ export function HistoryClient({ runs }: HistoryClientProps) {
                             type="button"
                             size="icon-sm"
                             variant="ghost"
-                            className="text-zinc-400 hover:text-zinc-100"
+                            className="size-7 text-zinc-500 hover:text-zinc-100"
                             render={
                               <Link
                                 href={
                                   run.isApiRun && run.lintRunId
-                                    ? `/results?runId=${run.lintRunId}`
+                                    ? `/results/${run.lintRunId}`
                                     : `/history/${run.id}`
                                 }
                               />
@@ -295,26 +348,30 @@ export function HistoryClient({ runs }: HistoryClientProps) {
                             nativeButton={false}
                             title="View Results"
                           >
-                            ✎
+                            →
                           </Button>
                         </div>
                       </TableCell>
                     </TableRow>
                   ))
                 ) : (
-                  <TableRow className="border-b border-[#1F2937]">
-                    <TableCell colSpan={5} className="px-4 py-10 text-center text-sm text-zinc-400">
-                      No history runs match your current filters.
+                  <TableRow>
+                    <TableCell colSpan={5} className="px-0 py-16 text-center text-sm text-zinc-500">
+                      {isLoading
+                        ? "Loading…"
+                        : hasActiveFilters
+                          ? "No runs match your search."
+                          : session?.user
+                            ? "No runs yet — upload a caption file to get started."
+                            : "No history yet."}
                     </TableCell>
                   </TableRow>
                 )}
               </TableBody>
             </Table>
-            <div className="flex items-center justify-between border-t border-[#1F2937] bg-[#1F2937] px-4 py-3">
-              <span className="font-mono text-xs text-zinc-400">
-                Showing {filteredRuns.length} of {allRuns.length} entries
-              </span>
-            </div>
+            <p className="mt-4 font-mono text-xs text-zinc-600">
+              {filteredRuns.length} of {allRuns.length} {allRuns.length === 1 ? "run" : "runs"}
+            </p>
           </div>
         </div>
       </div>

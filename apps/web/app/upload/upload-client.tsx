@@ -114,13 +114,14 @@ export function UploadClient({ source, initialPreset }: UploadClientProps) {
       presetId,
       engineVersion: LINT_ENGINE_VERSION,
       organizationId: orgId!,
+      assetId: asset.id,
       cues: [],
       vocabularyTerms: readVocabularyTerms() ?? defaultVocabularyTerms,
     });
 
     setStatus("Waiting for lint worker...");
     await pollLintStatus(run.id);
-    router.push(`/results?runId=${run.id}`);
+    router.push(`/results/${run.id}`);
     void asset;
   }
 
@@ -175,31 +176,80 @@ export function UploadClient({ source, initialPreset }: UploadClientProps) {
       <CardHeader>
         <CardTitle>Caption File</CardTitle>
         <CardDescription className="text-zinc-400">
-          Accepted formats: .srt and .vtt. Uploaded caption content stays in this browser for the MVP run.
+          Accepted formats: .srt and .vtt · Max 1 MB
         </CardDescription>
       </CardHeader>
-      <CardContent className="flex flex-col gap-4">
-        <label
+      <CardContent className="flex flex-col gap-6">
+        {/* Drop zone */}
+        <div
           className={cn(
-            "block rounded border border-dashed p-8 text-center text-sm text-zinc-400 transition-colors",
+            "relative flex flex-col items-center justify-center gap-4 rounded-lg border-2 border-dashed px-6 py-12 text-center transition-colors",
             isDragging ? "border-[#22C55E] bg-[#22C55E0f]" : "border-[#1F2937] bg-[#0B0F14]"
           )}
           onDragOver={handleDragOver}
           onDragLeave={handleDragLeave}
           onDrop={handleDrop}
         >
-          <div className="mb-3 text-zinc-300">Drag and drop your file here, or choose one manually</div>
-          <input
-            type="file"
-            accept=".srt,.vtt"
-            className="mx-auto block max-w-xs border border-[#1F2937] bg-[#111827] px-2.5 py-1 text-sm text-zinc-300 file:mr-2 file:border-0 file:bg-transparent file:text-sm file:font-medium file:text-zinc-200"
-            onChange={(event) => onFileChange(event.target.files?.[0])}
-          />
-        </label>
+          {/* Upload icon */}
+          <div className={cn("rounded-full p-3 transition-colors", isDragging ? "bg-[#22C55E20]" : "bg-[#1F2937]")}>
+            <svg
+              className={cn("size-7 transition-colors", isDragging ? "text-[#22C55E]" : "text-zinc-400")}
+              xmlns="http://www.w3.org/2000/svg"
+              fill="none"
+              viewBox="0 0 24 24"
+              strokeWidth={1.5}
+              stroke="currentColor"
+            >
+              <path strokeLinecap="round" strokeLinejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5m-13.5-9L12 3m0 0l4.5 4.5M12 3v13.5" />
+            </svg>
+          </div>
 
+          {file ? (
+            <div className="flex items-center gap-2 rounded-full border border-[#22C55E40] bg-[#22C55E0f] px-4 py-1.5 text-sm text-[#22C55E]">
+              <svg className="size-4 shrink-0" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m0 12.75h7.5m-7.5 3H12M10.5 2.25H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z" />
+              </svg>
+              <span className="max-w-xs truncate font-medium">{file.name}</span>
+              <button
+                type="button"
+                onClick={() => onFileChange(undefined)}
+                className="ml-1 rounded-full text-[#22C55E] opacity-70 hover:opacity-100"
+                aria-label="Remove file"
+              >
+                <svg className="size-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+          ) : (
+            <div>
+              <p className="text-sm font-medium text-zinc-200">
+                {isDragging ? "Drop to upload" : "Drag & drop your file here"}
+              </p>
+              <p className="mt-1 text-xs text-zinc-500">or</p>
+            </div>
+          )}
+
+          <label
+            className="inline-flex cursor-pointer items-center gap-2 rounded-md border border-[#1F2937] bg-[#111827] px-4 py-2 text-sm font-medium text-zinc-200 transition-colors hover:border-[#374151] hover:bg-[#1c2433]"
+          >
+            <svg className="size-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M2.25 12.75V12A2.25 2.25 0 014.5 9.75h15A2.25 2.25 0 0121.75 12v.75m-8.69-6.44l-2.12-2.12a1.5 1.5 0 00-1.061-.44H4.5A2.25 2.25 0 002.25 6v12a2.25 2.25 0 002.25 2.25h15A2.25 2.25 0 0021.75 18V9a2.25 2.25 0 00-2.25-2.25h-5.379a1.5 1.5 0 01-1.06-.44z" />
+            </svg>
+            {file ? "Change File" : "Browse Files"}
+            <input
+              type="file"
+              accept=".srt,.vtt"
+              className="sr-only"
+              onChange={(event) => onFileChange(event.target.files?.[0])}
+            />
+          </label>
+        </div>
+
+        {/* Preset + Run Mode selects */}
         <div className="grid gap-4 md:grid-cols-2">
           <div className="flex flex-col gap-2">
-            <label className="text-xs uppercase tracking-wider text-zinc-500">Platform Preset</label>
+            <label className="text-xs font-medium uppercase tracking-wider text-zinc-500">Platform Preset</label>
             <Select value={presetId} onValueChange={(value) => setPresetId(value as PresetId)}>
               <SelectTrigger className="border-[#1F2937] bg-[#0B0F14]">
                 <SelectValue placeholder={selectedPresetLabel} />
@@ -215,7 +265,7 @@ export function UploadClient({ source, initialPreset }: UploadClientProps) {
           </div>
 
           <div className="flex flex-col gap-2">
-            <label className="text-xs uppercase tracking-wider text-zinc-500">Run Mode</label>
+            <label className="text-xs font-medium uppercase tracking-wider text-zinc-500">Run Mode</label>
             <Select value="deterministic">
               <SelectTrigger className="border-[#1F2937] bg-[#0B0F14]">
                 <SelectValue placeholder="Deterministic QA" />
@@ -227,19 +277,39 @@ export function UploadClient({ source, initialPreset }: UploadClientProps) {
           </div>
         </div>
 
-        <div className="rounded border border-[#1F2937] bg-[#0B0F14] px-3 py-2 text-sm text-zinc-400">
-          {status}
-          {source ? <span className="ml-1 text-zinc-500">Source requested: {source}</span> : null}
-        </div>
-        {error ? <div className="rounded border border-[#7f1d1d] bg-[#450a0a] px-3 py-2 text-sm text-[#fecaca]">{error}</div> : null}
-        {parseWarning ? <div className="rounded border border-[#78350f] bg-[#451a03] px-3 py-2 text-sm text-[#fde68a]">⚠ {parseWarning}</div> : null}
+        {/* Status / errors */}
+        {error ? (
+          <div className="flex items-start gap-2 rounded-lg border border-[#7f1d1d] bg-[#450a0a] px-4 py-3 text-sm text-[#fecaca]">
+            <svg className="mt-0.5 size-4 shrink-0" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126zM12 15.75h.007v.008H12v-.008z" />
+            </svg>
+            {error}
+          </div>
+        ) : isRunning ? (
+          <div className="flex items-center gap-2 rounded-lg border border-[#1F2937] bg-[#0B0F14] px-4 py-3 text-sm text-zinc-400">
+            <svg className="size-4 shrink-0 animate-spin text-[#22C55E]" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+              <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+              <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+            </svg>
+            {status}
+          </div>
+        ) : null}
+
+        {parseWarning ? (
+          <div className="flex items-start gap-2 rounded-lg border border-[#78350f] bg-[#451a03] px-4 py-3 text-sm text-[#fde68a]">
+            <svg className="mt-0.5 size-4 shrink-0" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v3.75m9.303 3.376c.866 1.5-.217 3.374-1.948 3.374H4.645c-1.73 0-2.813-1.874-1.948-3.374L10.051 3.378c.866-1.5 3.032-1.5 3.898 0l7.354 12.748zM12 15.75h.007v.008H12v-.008z" />
+            </svg>
+            {parseWarning}
+          </div>
+        ) : null}
 
         <div className="flex justify-end">
           <Button
             type="button"
-            className="bg-[#22C55E] text-[#003915] hover:bg-[#4BE277]"
+            className="h-10 px-6 bg-[#22C55E] text-[#003915] hover:bg-[#4BE277] disabled:opacity-50"
             onClick={runQa}
-            disabled={isRunning}
+            disabled={isRunning || !file}
           >
             {isRunning ? "Running QA..." : "Run QA"}
           </Button>

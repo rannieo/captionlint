@@ -17,6 +17,7 @@ const createSchema = z.object({
   presetId: z.string(),
   engineVersion: z.string(),
   organizationId: z.string(),
+  assetId: z.string().optional(),
   cues: z.array(
     z.object({
       index: z.number(),

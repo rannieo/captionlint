@@ -13,8 +13,8 @@ export function mergeAndSortRuns(
   });
 
   const sorted = merged.sort((a, b) => {
-    if (a.isDemo === b.isDemo) return 0;
-    return a.isDemo ? 1 : -1;
+    if (a.isDemo !== b.isDemo) return a.isDemo ? 1 : -1;
+    return new Date(b.date).getTime() - new Date(a.date).getTime();
   });
 
   return limit !== undefined ? sorted.slice(0, limit) : sorted;

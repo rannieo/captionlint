@@ -4,13 +4,21 @@ import { lintCaptions, applySafeFixes } from '@repo/lint-engine';
 import { getCaptionPreset, defaultVocabularyTerms } from '@repo/config';
 import type { LintJobData } from '../queues/lint-queue';
 import { db } from '../db';
-import { lintRuns, findings, exports as exportsTable, historyItems } from '@repo/database/schema';
+import { lintRuns, findings, exports as exportsTable, historyItems, assets } from '@repo/database/schema';
 import { eq } from 'drizzle-orm';
 
 export async function lintProcessor(job: Job<LintJobData>): Promise<void> {
-  const { runId, content, filename, presetId, vocabularyTerms, format, engineVersion, organizationId, assetId } = job.data;
+  const { runId, filename, presetId, vocabularyTerms, format, organizationId, assetId } = job.data;
+  let content = job.data.content;
 
   console.log(`Processing lint job ${runId} for file ${filename}`);
+
+  // If content is empty (upload-via-asset path), fetch it from the assets table
+  if (!content && assetId) {
+    const [assetRow] = await db.select({ content: assets.content }).from(assets).where(eq(assets.id, assetId));
+    if (!assetRow) throw new Error(`Asset ${assetId} not found`);
+    content = assetRow.content;
+  }
 
   // Update status: QUEUED → RUNNING
   await db.update(lintRuns)

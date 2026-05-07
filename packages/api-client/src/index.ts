@@ -10,6 +10,7 @@ export type CreateLintRunPayload = {
   presetId: string;
   engineVersion: string;
   organizationId: string;
+  assetId?: string;
   cues: Array<{
     index: number;
     startMs: number;
