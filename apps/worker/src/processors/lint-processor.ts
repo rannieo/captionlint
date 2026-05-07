@@ -2,8 +2,8 @@ import { Job } from 'bullmq';
 import { parseCaptionFile, serializeCaptionFile } from '@repo/caption-parser';
 import { lintCaptions, applySafeFixes } from '@repo/lint-engine';
 import { getCaptionPreset, defaultVocabularyTerms } from '@repo/config';
-import type { LintJobData } from '../queues/lint-queue';
-import { db } from '../db';
+import type { LintJobData } from '../queues/lint-queue.js';
+import { db } from '../db/index.js';
 import { lintRuns, findings, exports as exportsTable, historyItems, assets } from '@repo/database/schema';
 import { eq } from 'drizzle-orm';
 

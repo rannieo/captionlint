@@ -15,6 +15,7 @@ export function ContactForm() {
   const [message, setMessage] = useState("");
   const [status, setStatus] = useState<Status>("idle");
   const [errorMsg, setErrorMsg] = useState("");
+  const [submittedEmail, setSubmittedEmail] = useState("");
 
   function validate(): string | null {
     if (name.trim().length < 2) return "Enter your full name.";
@@ -46,6 +47,7 @@ export function ContactForm() {
 
     if (res.ok) {
       posthog.capture("contact_form_success");
+      setSubmittedEmail(email.trim());
       setStatus("success");
       setName("");
       setEmail("");
@@ -72,7 +74,7 @@ export function ContactForm() {
           <path strokeLinecap="round" strokeLinejoin="round" d="M9 12.75 11.25 15 15 9.75M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" />
         </svg>
         <p className="text-lg font-semibold text-zinc-100">Message sent!</p>
-        <p className="text-sm text-zinc-400">We'll get back to you at <span className="text-zinc-200">{email || "your address"}</span> as soon as we can.</p>
+        <p className="text-sm text-zinc-400">We'll get back to you at <span className="text-zinc-200">{submittedEmail || "your address"}</span> as soon as we can.</p>
         <Button
           type="button"
           variant="outline"
@@ -87,7 +89,7 @@ export function ContactForm() {
   }
 
   return (
-    <form className="flex flex-col gap-5" onSubmit={handleSubmit}>
+    <form className="flex flex-col gap-5" onSubmit={handleSubmit} noValidate>
       <div className="grid gap-4 sm:grid-cols-2">
         <div className="flex flex-col gap-2">
           <label htmlFor="contact-name" className="text-xs font-semibold uppercase tracking-wider text-zinc-400">

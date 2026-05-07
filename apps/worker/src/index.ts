@@ -1,5 +1,5 @@
-import { LintQueue } from './queues/lint-queue';
-import { lintProcessor } from './processors/lint-processor';
+import { LintQueue } from './queues/lint-queue.js';
+import { lintProcessor } from './processors/lint-processor.js';
 
 async function main() {
   console.log('Starting CaptionLint worker...');

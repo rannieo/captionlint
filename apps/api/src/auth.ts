@@ -25,7 +25,7 @@ export const auth = betterAuth({
       create: {
         after: async (user) => {
           const orgId = crypto.randomUUID();
-          const orgName = user.name?.trim() || user.email.split('@')[0];
+          const orgName = user.name?.trim() || (user.email.split('@')[0] ?? user.email);
           await db.insert(organization).values({
             id: orgId,
             name: orgName,
