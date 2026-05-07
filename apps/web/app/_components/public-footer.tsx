@@ -15,6 +15,9 @@ export function PublicFooter() {
           <Link href="/pricing" className="hover:text-[#22c55e]">
             Pricing
           </Link>
+          <Link href="/contact" className="hover:text-[#22c55e]">
+            Contact
+          </Link>
           <Link href="/terms" className="hover:text-[#22c55e]">
             Terms
           </Link>
