@@ -2,6 +2,7 @@
 
 import { useRouter } from "next/navigation";
 import React, { useEffect, useMemo, useState } from "react";
+import posthog from "posthog-js";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import {
@@ -15,9 +16,10 @@ import { cn } from "@/lib/utils";
 import { defaultVocabularyTerms } from "@repo/config";
 import type { PresetId } from "@repo/shared-types";
 import { createLintRunFromContent, toStoredHistoryRun } from "@/lib/workflow-data";
-import { prependHistoryRun, readVocabularyTerms, writeCurrentRun } from "@/lib/workflow-storage";
+import { prependHistoryRun, readHistoryRuns, readVocabularyTerms, writeCurrentRun } from "@/lib/workflow-storage";
 import { authClient } from "@/lib/auth-client";
-import { createAsset, createLintRun, pollLintStatus } from "@repo/api-client";
+import { createAsset, createLintRun, pollLintStatus, listHistory } from "@repo/api-client";
+import { FREE_PLAN, sumMonthlyMinutes, getMonthStart } from "@/lib/plan-limits";
 
 const maxFileSizeBytes = 1_000_000;
 const LINT_ENGINE_VERSION = "1.0.0";
@@ -45,15 +47,32 @@ export function UploadClient({ source, initialPreset }: UploadClientProps) {
   const [parseWarning, setParseWarning] = useState<string>();
   const [isRunning, setIsRunning] = useState(false);
   const [isDragging, setIsDragging] = useState(false);
+  const [minutesUsed, setMinutesUsed] = useState<number | undefined>();
 
   useEffect(() => {
     if (!session?.user) return;
     authClient.organization.list().then((result) => {
       const orgs = result.data;
       const firstOrg = orgs?.[0];
-      if (firstOrg) setOrgId(firstOrg.id);
+      if (!firstOrg) return;
+      setOrgId(firstOrg.id);
+      // Fetch monthly usage for enforcement
+      listHistory(firstOrg.id).then((items) => {
+        setMinutesUsed(sumMonthlyMinutes(items));
+      }).catch(() => {});
     }).catch(() => {});
   }, [session?.user]);
+
+  // For local (guest) users: estimate from localStorage run count this month
+  useEffect(() => {
+    if (session?.user) return;
+    const monthStart = getMonthStart().getTime();
+    const localRuns = readHistoryRuns().filter((r) => new Date(r.date).getTime() >= monthStart);
+    setMinutesUsed(localRuns.length * FREE_PLAN.avgMinutesPerRun);
+  }, [session?.user]);
+
+  const minutesLimit = FREE_PLAN.minutesPerMonth;
+  const minutesOverLimit = minutesUsed !== undefined && minutesUsed >= minutesLimit;
 
   const selectedPresetLabel = useMemo(
     () => presets.find((preset) => preset.value === presetId)?.label ?? "Default",
@@ -121,6 +140,11 @@ export function UploadClient({ source, initialPreset }: UploadClientProps) {
 
     setStatus("Waiting for lint worker...");
     await pollLintStatus(run.id);
+    posthog.capture("lint_run_completed", {
+      preset_id: presetId,
+      format,
+      run_mode: "api",
+    });
     router.push(`/results/${run.id}`);
     void asset;
   }
@@ -132,6 +156,9 @@ export function UploadClient({ source, initialPreset }: UploadClientProps) {
     if (!result.run || !result.exportContent) {
       setError(result.error ?? "Unable to parse this caption file.");
       setStatus("Lint run stopped before findings were created.");
+      posthog.captureException(new Error(result.error ?? "Unable to parse caption file"), {
+        preset_id: presetId,
+      });
       return;
     }
 
@@ -140,6 +167,14 @@ export function UploadClient({ source, initialPreset }: UploadClientProps) {
     if (result.parserWarnings && result.parserWarnings.length > 0) {
       setParseWarning(`${result.parserWarnings.length} cue${result.parserWarnings.length > 1 ? "s" : ""} skipped during parsing (malformed structure). Check findings for details.`);
     }
+    posthog.capture("lint_run_completed", {
+      preset_id: presetId,
+      format: /\.vtt$/i.test(file!.name) ? "VTT" : "SRT",
+      run_mode: "local",
+      findings_count: result.run.findings.length,
+      errors: result.run.summary.error,
+      warnings: result.run.summary.warn,
+    });
     setStatus("Lint run complete. Opening results...");
     router.push("/results");
   }
@@ -149,11 +184,26 @@ export function UploadClient({ source, initialPreset }: UploadClientProps) {
       setError("Choose an SRT or VTT file before running QA.");
       return;
     }
+    if (minutesOverLimit) {
+      posthog.capture("plan_limit_reached", {
+        limit_type: "monthly_minutes",
+        minutes_used: minutesUsed,
+        minutes_limit: minutesLimit,
+      });
+      setError(`Monthly limit of ${minutesLimit} min reached. Upgrade your plan to continue.`);
+      return;
+    }
 
     setIsRunning(true);
     setError(undefined);
     setParseWarning(undefined);
     setStatus("Parsing captions and running deterministic checks...");
+
+    posthog.capture("lint_run_started", {
+      preset_id: presetId,
+      format: /\.vtt$/i.test(file.name) ? "VTT" : "SRT",
+      run_mode: session?.user && orgId ? "api" : "local",
+    });
 
     try {
       const content = await file.text();
@@ -164,7 +214,14 @@ export function UploadClient({ source, initialPreset }: UploadClientProps) {
         await runQaLocal(content);
       }
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Unexpected error during QA run.");
+      const message = err instanceof Error ? err.message : "Unexpected error during QA run.";
+      posthog.capture("lint_run_failed", {
+        preset_id: presetId,
+        error_message: message,
+        run_mode: session?.user && orgId ? "api" : "local",
+      });
+      posthog.captureException(err instanceof Error ? err : new Error(message));
+      setError(message);
       setStatus("QA run failed.");
     } finally {
       setIsRunning(false);
@@ -304,12 +361,35 @@ export function UploadClient({ source, initialPreset }: UploadClientProps) {
           </div>
         ) : null}
 
+        {/* Monthly usage meter */}
+        {minutesUsed !== undefined && (
+          <div className="rounded border border-[#1F2937] bg-[#0B0F14] px-4 py-3">
+            <div className="mb-1.5 flex items-center justify-between text-[11px]">
+              <span className="font-semibold uppercase tracking-wider text-zinc-400">Monthly Usage</span>
+              <span className={`font-mono font-semibold ${minutesOverLimit ? "text-[#EF4444]" : "text-zinc-300"}`}>
+                {Math.round(minutesUsed)} / {minutesLimit} min
+              </span>
+            </div>
+            <div className="h-1.5 overflow-hidden rounded-full bg-[#1F2937]">
+              <div
+                className={`h-full rounded-full transition-all ${minutesOverLimit ? "bg-[#EF4444]" : minutesUsed / minutesLimit > 0.8 ? "bg-[#F59E0B]" : "bg-[#22C55E]"}`}
+                style={{ width: `${Math.min((minutesUsed / minutesLimit) * 100, 100)}%` }}
+              />
+            </div>
+            {minutesOverLimit && (
+              <p className="mt-1.5 text-[11px] text-[#EF4444]">
+                Limit reached. <a href="/pricing" className="underline hover:text-zinc-200">Upgrade</a> for more minutes.
+              </p>
+            )}
+          </div>
+        )}
+
         <div className="flex justify-end">
           <Button
             type="button"
             className="h-10 px-6 bg-[#22C55E] text-[#003915] hover:bg-[#4BE277] disabled:opacity-50"
             onClick={runQa}
-            disabled={isRunning || !file}
+            disabled={isRunning || !file || minutesOverLimit}
           >
             {isRunning ? "Running QA..." : "Run QA"}
           </Button>

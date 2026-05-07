@@ -5,6 +5,7 @@ import { useState } from "react";
 import { Menu } from "lucide-react";
 import { Sheet, SheetContent, SheetTitle } from "@/components/ui/sheet";
 import { WorkspaceNav } from "./workspace-nav";
+import { WorkspaceUserBadge } from "./workspace-user-badge";
 
 export function MobileNavSheet() {
   const [open, setOpen] = useState(false);
@@ -21,7 +22,7 @@ export function MobileNavSheet() {
       </button>
 
       <Sheet open={open} onOpenChange={setOpen}>
-        <SheetContent side="left" className="w-[280px] border-r border-[#1F2937] bg-[#111112] p-0">
+        <SheetContent side="left" className="flex w-[280px] flex-col border-r border-[#1F2937] bg-[#111112] p-0">
           <SheetTitle className="sr-only">Navigation</SheetTitle>
           <div className="flex items-center gap-3 px-6 pb-8 pt-5">
             <Image src="/logo.png" alt="CaptionLint" width={32} height={32} className="rounded" />
@@ -33,6 +34,9 @@ export function MobileNavSheet() {
             </div>
           </div>
           <WorkspaceNav />
+          <div className="mt-auto border-t border-[#1F2937]">
+            <WorkspaceUserBadge />
+          </div>
         </SheetContent>
       </Sheet>
     </>

@@ -1,14 +1,16 @@
 "use client";
 
-import Link from "next/link";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
+import posthog from "posthog-js";
+import { RotateCcw, Download, ArrowRight } from "lucide-react";
 import { WorkspaceShell } from "../_components/workspace-shell";
 import { WorkspaceTopbar } from "../_components/workspace-topbar";
 import type { HistoryRun } from "@/lib/history-data";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import {
   Table,
   TableBody,
@@ -17,10 +19,12 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { readHistoryRuns } from "@/lib/workflow-storage";
+import { readHistoryRuns, writeCurrentRun } from "@/lib/workflow-storage";
 import { mergeAndSortRuns } from "@/lib/history-utils";
+import { createLintRunFromContent } from "@/lib/workflow-data";
 import { authClient } from "@/lib/auth-client";
 import { listHistory, refixHistory, exportLintRun, type HistoryItem } from "@repo/api-client";
+import { defaultVocabularyTerms } from "@repo/config";
 
 const PRESET_LABELS: Record<string, string> = {
   default: "Default",
@@ -146,6 +150,11 @@ export function HistoryClient({ runs }: HistoryClientProps) {
       return;
     }
 
+    posthog.capture("history_run_downloaded", {
+      format,
+      preset_id: run.presets[0] ?? "default",
+      run_mode: run.isApiRun ? "api" : "local",
+    });
     const blob = new Blob([content], { type: format === "VTT" ? "text/vtt" : "text/plain" });
     const url = URL.createObjectURL(blob);
     const link = document.createElement("a");
@@ -158,8 +167,37 @@ export function HistoryClient({ runs }: HistoryClientProps) {
   async function refixApiRun(run: HistoryRun) {
     if (!run.isApiRun) return;
     const presetId = run.presets[0] ?? "default";
+    posthog.capture("history_run_refixed", {
+      preset_id: presetId,
+      run_mode: "api",
+    });
     const result = await refixHistory(run.id, presetId);
     router.push(`/results/${result.runId}`);
+  }
+
+  function refixLocalRun(run: HistoryRun) {
+    posthog.capture("history_run_refixed", {
+      preset_id: run.presets[0] ?? "default",
+      run_mode: "local",
+    });
+    router.push(`/upload/runs/${encodeURIComponent(run.id)}`);
+  }
+
+  function viewLocalRun(run: HistoryRun) {
+    if (run.rawContent) {
+      const stored = readHistoryRuns().find((r) => r.id === run.id);
+      const content = stored?.rawContent ?? run.rawContent;
+      const result = createLintRunFromContent({
+        filename: run.file,
+        content,
+        presetId: (run.presets[0] ?? "default") as import("@repo/shared-types").PresetId,
+        vocabularyTerms: defaultVocabularyTerms,
+      });
+      if (result.run && result.exportContent) {
+        writeCurrentRun({ run: result.run, exportContent: result.exportContent });
+      }
+    }
+    router.push("/results");
   }
 
   return (
@@ -284,73 +322,64 @@ export function HistoryClient({ runs }: HistoryClientProps) {
                         )}
                       </TableCell>
                       <TableCell className="px-0 py-3.5 text-right">
-                        <div className="flex justify-end gap-0.5">
-                          {run.isApiRun ? (
-                            <Button
-                              type="button"
-                              size="icon-sm"
-                              variant="ghost"
-                              className="size-7 text-zinc-500 hover:text-[#22c55e]"
-                              title="Re-run"
-                              onClick={() => refixApiRun(run)}
-                            >
-                              ↺
-                            </Button>
-                          ) : run.rawContent ? (
-                            <Button
-                              type="button"
-                              size="icon-sm"
-                              variant="ghost"
-                              className="size-7 text-zinc-500 hover:text-[#22c55e]"
-                              render={<Link href={`/upload?runId=${encodeURIComponent(run.id)}`} />}
-                              nativeButton={false}
-                              title="Re-run"
-                            >
-                              ↺
-                            </Button>
-                          ) : (
-                            <Button
-                              type="button"
-                              size="icon-sm"
-                              variant="ghost"
-                              className="size-7 cursor-not-allowed text-zinc-700"
-                              disabled
-                              title="Demo run — upload the file to re-fix"
-                            >
-                              ↺
-                            </Button>
-                          )}
-                          <Button
-                            type="button"
-                            size="icon-sm"
-                            variant="ghost"
-                            className="size-7 text-zinc-500 hover:text-zinc-100 disabled:opacity-30"
-                            disabled={!run.downloadContent && !(run.isApiRun && run.lintRunId)}
-                            title="Download fixed file"
-                            onClick={() => downloadHistoryRun(run)}
-                          >
-                            ⇩
-                          </Button>
-                          <Button
-                            type="button"
-                            size="icon-sm"
-                            variant="ghost"
-                            className="size-7 text-zinc-500 hover:text-zinc-100"
-                            render={
-                              <Link
-                                href={
-                                  run.isApiRun && run.lintRunId
-                                    ? `/results/${run.lintRunId}`
-                                    : `/history/${run.id}`
-                                }
-                              />
-                            }
-                            nativeButton={false}
-                            title="View Results"
-                          >
-                            →
-                          </Button>
-                        </div>
+                        <TooltipProvider>
+                          <div className="flex justify-end gap-0.5">
+                            {/* Re-run */}
+                            <Tooltip>
+                              <TooltipTrigger render={
+                                run.isApiRun ? (
+                                  <Button type="button" size="icon-sm" variant="ghost" className="size-7 text-zinc-500 hover:text-[#22c55e]" onClick={() => refixApiRun(run)} />
+                                ) : run.rawContent ? (
+                                  <Button type="button" size="icon-sm" variant="ghost" className="size-7 text-zinc-500 hover:text-[#22c55e]" onClick={() => refixLocalRun(run)} />
+                                ) : (
+                                  <span className="inline-flex size-7 cursor-not-allowed items-center justify-center rounded-lg text-zinc-700" />
+                                )
+                              }>
+                                <RotateCcw className="size-3.5" />
+                              </TooltipTrigger>
+                              <TooltipContent>
+                                {run.isApiRun || run.rawContent ? "Re-run with different preset" : "Demo run — upload the file to re-fix"}
+                              </TooltipContent>
+                            </Tooltip>
+
+                            {/* Download */}
+                            <Tooltip>
+                              <TooltipTrigger render={
+                                <Button
+                                  type="button"
+                                  size="icon-sm"
+                                  variant="ghost"
+                                  className="size-7 text-zinc-500 hover:text-zinc-100 disabled:opacity-30"
+                                  disabled={!run.downloadContent && !(run.isApiRun && run.lintRunId)}
+                                  onClick={() => downloadHistoryRun(run)}
+                                />
+                              }>
+                                <Download className="size-3.5" />
+                              </TooltipTrigger>
+                              <TooltipContent>Download fixed file</TooltipContent>
+                            </Tooltip>
+
+                            {/* View */}
+                            <Tooltip>
+                              <TooltipTrigger render={
+                                <Button
+                                  type="button"
+                                  size="icon-sm"
+                                  variant="ghost"
+                                  className="size-7 text-zinc-500 hover:text-zinc-100"
+                                  onClick={() =>
+                                    run.isApiRun && run.lintRunId
+                                      ? router.push(`/results/${run.lintRunId}`)
+                                      : viewLocalRun(run)
+                                  }
+                                />
+                              }>
+                                <ArrowRight className="size-3.5" />
+                              </TooltipTrigger>
+                              <TooltipContent>View results</TooltipContent>
+                            </Tooltip>
+                          </div>
+                        </TooltipProvider>
                       </TableCell>
                     </TableRow>
                   ))

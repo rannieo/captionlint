@@ -27,7 +27,7 @@ export const pricingPlans: PricingPlan[] = [
     featured: false,
     features: [
       { icon: "schedule", text: "100 min / mo", muted: true },
-      { icon: "rule", text: "1 Ruleset", muted: true },
+      { icon: "rule", text: "5 Rulesets", muted: true },
       { icon: "person", text: "1 Seat", muted: true },
     ],
   },
@@ -62,10 +62,12 @@ export const pricingPlans: PricingPlan[] = [
 ];
 
 export const pricingCompareRows: PricingFeatureRow[] = [
+  { feature: "Caption minutes / mo", free: "100 min", pro: "1,000 min", team: "5,000 min" },
+  { feature: "Ruleset terms", free: "5 terms", pro: "Unlimited", team: "Unlimited" },
+  { feature: "Seats", free: "1", pro: "1", team: "Up to 5" },
   { feature: "Syntax Highlighting", free: "check", pro: "check", team: "check" },
-  { feature: "Custom Dictionaries", free: "dash", pro: "check", team: "check" },
-  { feature: "History Re-fix", free: "dash", pro: "check", team: "check" },
   { feature: "Export Downloads", free: "check", pro: "check", team: "check" },
+  { feature: "History Re-fix", free: "dash", pro: "check", team: "check" },
   { feature: "Priority Support", free: "Community", pro: "Standard", team: "Priority" },
 ];
 

@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import posthog from "posthog-js";
 import { defaultVocabularyTerms } from "@repo/config";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -16,6 +17,7 @@ import {
 import { readVocabularyTerms, writeVocabularyTerms } from "@/lib/workflow-storage";
 import { authClient } from "@/lib/auth-client";
 import { listVocabularyTerms, addVocabularyTerm, deleteVocabularyTerm } from "@repo/api-client";
+import { FREE_PLAN } from "@/lib/plan-limits";
 import type { VocabularyTerm } from "@repo/shared-types";
 
 export function RulesetsClient() {
@@ -51,9 +53,20 @@ export function RulesetsClient() {
     return terms.filter((term) => term.toLowerCase().includes(normalizedQuery));
   }, [query, terms]);
 
+  const atTermLimit = terms.length >= FREE_PLAN.rulesetTerms;
+
   async function addTerm() {
     const term = draft.trim();
     if (!term) return;
+    if (atTermLimit) {
+      posthog.capture("plan_limit_reached", {
+        limit_type: "vocabulary_terms",
+        terms_used: terms.length,
+        terms_limit: FREE_PLAN.rulesetTerms,
+      });
+      setMessage(`Free plan limit reached (${FREE_PLAN.rulesetTerms} terms). Upgrade to add more.`);
+      return;
+    }
     if (terms.some((item) => item.toLowerCase() === term.toLowerCase())) {
       setMessage(`${term} is already protected.`);
       return;
@@ -67,6 +80,10 @@ export function RulesetsClient() {
       setLocalTerms(next);
       writeVocabularyTerms(next);
     }
+    posthog.capture("vocabulary_term_added", {
+      storage: isApi ? "api" : "local",
+      total_terms: terms.length + 1,
+    });
     setDraft("");
     setMessage(`${term} will be checked during future lint runs.`);
   }
@@ -83,6 +100,10 @@ export function RulesetsClient() {
       setLocalTerms(next);
       writeVocabularyTerms(next);
     }
+    posthog.capture("vocabulary_term_removed", {
+      storage: isApi ? "api" : "local",
+      total_terms: terms.length - 1,
+    });
     setMessage(`${term} removed from future lint runs.`);
   }
 
@@ -92,14 +113,36 @@ export function RulesetsClient() {
         <h3 className="mb-1 text-lg font-semibold text-zinc-100">Add Protected Term</h3>
         <p className="mb-6 text-sm text-zinc-400">Protect brand names, product names, and technical terms from awkward line breaks.</p>
 
+        {/* Usage meter */}
+        <div className="mb-6 rounded border border-[#1F2937] bg-[#0B0F14] p-3">
+          <div className="mb-1.5 flex items-center justify-between text-[11px]">
+            <span className="font-semibold uppercase tracking-wider text-zinc-400">Plan Usage</span>
+            <span className={`font-mono font-semibold ${atTermLimit ? "text-[#EF4444]" : "text-zinc-300"}`}>
+              {terms.length} / {FREE_PLAN.rulesetTerms} terms
+            </span>
+          </div>
+          <div className="h-1.5 overflow-hidden rounded-full bg-[#1F2937]">
+            <div
+              className={`h-full rounded-full transition-all ${atTermLimit ? "bg-[#EF4444]" : "bg-[#22C55E]"}`}
+              style={{ width: `${Math.min((terms.length / FREE_PLAN.rulesetTerms) * 100, 100)}%` }}
+            />
+          </div>
+          {atTermLimit && (
+            <p className="mt-2 text-[11px] text-[#EF4444]">
+              Limit reached. <a href="/pricing" className="underline hover:text-zinc-200">Upgrade</a> for unlimited terms.
+            </p>
+          )}
+        </div>
+
         <form className="flex flex-col gap-5" onSubmit={(event) => { event.preventDefault(); void addTerm(); }}>
           <div className="flex flex-col gap-2">
             <label className="text-xs font-semibold uppercase tracking-wider text-zinc-300">Term</label>
             <Input
-              className="border-[#1F2937] bg-[#0B0F14] font-mono text-sm text-[#22C55E]"
+              className="border-[#1F2937] bg-[#0B0F14] font-mono text-sm text-[#22C55E] disabled:opacity-50"
               placeholder="e.g. ChatGPT"
               value={draft}
               onChange={(event) => setDraft(event.target.value)}
+              disabled={atTermLimit}
             />
           </div>
 
@@ -107,7 +150,7 @@ export function RulesetsClient() {
             Terms are matched exactly for MVP. Regex, wildcards, and advanced case settings are future scope.
           </div>
 
-          <Button type="submit" variant="outline" className="w-full border-[#1F2937] bg-[#1F2937] text-zinc-100 hover:bg-zinc-700">
+          <Button type="submit" variant="outline" className="w-full border-[#1F2937] bg-[#1F2937] text-zinc-100 hover:bg-zinc-700 disabled:opacity-50 disabled:cursor-not-allowed" disabled={atTermLimit}>
             + Save Term
           </Button>
         </form>

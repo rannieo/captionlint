@@ -6,7 +6,7 @@ import { featureFlags } from "@/lib/feature-flags";
 const allNavItems = [
   { id: "profile", label: "Profile Context" },
   ...(featureFlags.showApiKeys ? [{ id: "api", label: "API Authentication" }] : []),
-  { id: "usage", label: "Resource Usage & Plan" },
+  ...(featureFlags.showResourceUsage ? [{ id: "usage", label: "Resource Usage & Plan" }] : []),
   { id: "preferences", label: "Global Preferences" },
 ];
 

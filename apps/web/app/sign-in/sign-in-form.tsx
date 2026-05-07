@@ -4,6 +4,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { FormEvent, useState } from "react";
 import { useRouter } from "next/navigation";
+import posthog from "posthog-js";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -46,7 +47,11 @@ export function SignInForm() {
     await authClient.signIn.email(
       { email, password },
       {
-        onSuccess: () => router.push("/dashboard"),
+        onSuccess: (ctx) => {
+          posthog.identify(ctx.data.user.id, { email: ctx.data.user.email, name: ctx.data.user.name });
+          posthog.capture("user_signed_in", { method: "email" });
+          router.push("/dashboard");
+        },
         onError: (ctx) => {
           setError(ctx.error.message);
           setIsSubmitting(false);

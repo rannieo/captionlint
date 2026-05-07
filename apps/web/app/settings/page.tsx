@@ -2,13 +2,13 @@ import type { Metadata } from "next";
 import { WorkspaceShell } from "../_components/workspace-shell";
 import { WorkspaceTopbar } from "../_components/workspace-topbar";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
-import { billingSummary, profileSummary } from "../../lib/settings-data";
+import { billingSummary } from "../../lib/settings-data";
 import { featureFlags } from "@/lib/feature-flags";
 import { SettingsSidebarNav } from "./settings-sidebar-nav";
+import { ProfileCard } from "./profile-card";
 
 const settingsDescription = featureFlags.showApiKeys
   ? "Manage account preferences, API keys, and workspace billing."
@@ -20,8 +20,6 @@ export const metadata: Metadata = {
 };
 
 export default function SettingsPage() {
-  const [firstName, ...rest] = profileSummary.name.split(" ");
-  const lastName = rest.join(" ") || "Owner";
 
   return (
     <WorkspaceShell>
@@ -45,46 +43,7 @@ export default function SettingsPage() {
               <section id="profile" className="scroll-mt-24">
                 <h2 className="mb-4 text-lg font-semibold text-zinc-100">Profile Context</h2>
                 <Separator className="mb-6 bg-[#1F2937]" />
-                <Card className="border border-[#1F2937] ring-0">
-                  <CardContent className="p-6">
-                    <div className="mb-8 flex items-center gap-6">
-                      <div className="relative grid size-20 place-items-center rounded-full border border-[#1F2937] bg-zinc-800 text-xl font-semibold text-zinc-200">
-                        {firstName?.[0] ?? "U"}{lastName?.[0] ?? "S"}
-                        <Button
-                          type="button"
-                          size="icon-sm"
-                          variant="outline"
-                          className="absolute bottom-0 right-0 rounded-full border-[#1F2937] bg-[#0B0F14] text-zinc-200 hover:text-[#22C55E]"
-                        >
-                          ✎
-                        </Button>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <Button variant="outline" className="border-[#1F2937] bg-[#0B0F14]">Upload New</Button>
-                        <Button variant="ghost" className="text-zinc-400 hover:text-[#ef4444]">Remove</Button>
-                      </div>
-                    </div>
-                    <div className="space-y-4">
-                      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-                        <div>
-                          <label className="mb-1 block text-[11px] font-semibold uppercase tracking-wider text-zinc-400">First Name</label>
-                          <Input defaultValue={firstName} className="border-[#1F2937] bg-[#0B0F14]" />
-                        </div>
-                        <div>
-                          <label className="mb-1 block text-[11px] font-semibold uppercase tracking-wider text-zinc-400">Last Name</label>
-                          <Input defaultValue={lastName} className="border-[#1F2937] bg-[#0B0F14]" />
-                        </div>
-                      </div>
-                      <div>
-                        <label className="mb-1 block text-[11px] font-semibold uppercase tracking-wider text-zinc-400">Email Address</label>
-                        <Input defaultValue="jane.doe@captionlint.io" disabled className="cursor-not-allowed border-[#1F2937] bg-[#1F2937] text-zinc-400" />
-                      </div>
-                      <div className="flex justify-end pt-3">
-                        <Button className="bg-[#22C55E] text-[#0A0A0B] hover:bg-[#4BE277]">Save Changes</Button>
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
+                <ProfileCard />
               </section>
 
               {featureFlags.showApiKeys ? (
@@ -128,86 +87,95 @@ export default function SettingsPage() {
                 </section>
               ) : null}
 
-              <section id="usage" className="scroll-mt-24">
-                <h2 className="mb-4 text-lg font-semibold text-zinc-100">Resource Usage &amp; Plan</h2>
-                <Separator className="mb-6 bg-[#1F2937]" />
-                <Card className="border border-[#1F2937] ring-0">
-                  <CardContent className="p-6">
-                    <div className="mb-6 flex items-start justify-between">
-                      <div>
-                        <h3 className="text-lg font-medium text-zinc-100">{billingSummary.plan} Plan</h3>
-                        <p className="mt-1 text-sm text-zinc-400">Next invoice: {billingSummary.nextInvoiceDate}</p>
+              {featureFlags.showResourceUsage ? (
+                <section id="usage" className="scroll-mt-24">
+                  <h2 className="mb-4 text-lg font-semibold text-zinc-100">Resource Usage &amp; Plan</h2>
+                  <Separator className="mb-6 bg-[#1F2937]" />
+                  <Card className="border border-[#1F2937] ring-0">
+                    <CardContent className="p-6">
+                      <div className="mb-6 flex items-start justify-between">
+                        <div>
+                          <h3 className="text-lg font-medium text-zinc-100">{billingSummary.plan} Plan</h3>
+                          <p className="mt-1 text-sm text-zinc-400">Next invoice: {billingSummary.nextInvoiceDate}</p>
+                        </div>
+                        <Badge variant="outline" className="h-auto rounded border-[#1F2937] bg-[#1F2937] px-2 py-1 text-xs text-zinc-300">
+                          Active
+                        </Badge>
                       </div>
-                      <Badge variant="outline" className="h-auto rounded border-[#1F2937] bg-[#1F2937] px-2 py-1 text-xs text-zinc-300">
-                        Active
-                      </Badge>
-                    </div>
-                    <div className="space-y-6">
-                      <div>
-                        <div className="mb-2 flex justify-between text-sm">
-                          <span className="text-zinc-400">Caption Linting Hours</span>
-                          <span className="font-mono text-zinc-100">45 / 100 hrs</span>
+                      <div className="space-y-6">
+                        <div>
+                          <div className="mb-2 flex justify-between text-sm">
+                            <span className="text-zinc-400">Caption Linting Hours</span>
+                            <span className="font-mono text-zinc-100">45 / 100 hrs</span>
+                          </div>
+                          <div className="h-2 overflow-hidden rounded-full bg-[#1F2937]">
+                            <div className="h-full w-[45%] bg-[#22C55E]" />
+                          </div>
                         </div>
-                        <div className="h-2 overflow-hidden rounded-full bg-[#1F2937]">
-                          <div className="h-full w-[45%] bg-[#22C55E]" />
-                        </div>
-                      </div>
-                      <div>
-                        <div className="mb-2 flex justify-between text-sm">
-                          <span className="text-zinc-400">Storage</span>
-                          <span className="font-mono text-zinc-100">12 / 50 GB</span>
-                        </div>
-                        <div className="h-2 overflow-hidden rounded-full bg-[#1F2937]">
-                          <div className="h-full w-[24%] bg-[#22C55E]" />
+                        <div>
+                          <div className="mb-2 flex justify-between text-sm">
+                            <span className="text-zinc-400">Storage</span>
+                            <span className="font-mono text-zinc-100">12 / 50 GB</span>
+                          </div>
+                          <div className="h-2 overflow-hidden rounded-full bg-[#1F2937]">
+                            <div className="h-full w-[24%] bg-[#22C55E]" />
+                          </div>
                         </div>
                       </div>
-                    </div>
-                    <div className="mt-8 flex justify-end gap-2 border-t border-[#1F2937] pt-6">
-                      <Button variant="outline" className="border-[#1F2937] bg-[#0B0F14]">Manage Billing</Button>
-                      <Button className="bg-[#22C55E] text-[#0A0A0B] hover:bg-[#4BE277]">Upgrade Plan</Button>
-                    </div>
-                  </CardContent>
-                </Card>
-              </section>
+                      <div className="mt-8 flex justify-end gap-2 border-t border-[#1F2937] pt-6">
+                        <Button variant="outline" className="border-[#1F2937] bg-[#0B0F14]">Manage Billing</Button>
+                        <Button className="bg-[#22C55E] text-[#0A0A0B] hover:bg-[#4BE277]">Upgrade Plan</Button>
+                      </div>
+                    </CardContent>
+                  </Card>
+                </section>
+              ) : null}
 
               <section id="preferences" className="scroll-mt-24">
                 <h2 className="mb-4 text-lg font-semibold text-zinc-100">Global Preferences</h2>
                 <Separator className="mb-6 bg-[#1F2937]" />
                 <Card className="border border-[#1F2937] ring-0">
-                  {[
-                    {
-                      title: "Strict Linting Mode",
-                      description: "Enforce maximum grammatical constraints and flag minor tonal inconsistencies across all projects by default.",
-                      enabled: true,
-                    },
-                    {
-                      title: "Beta Features Access",
-                      description: "Opt-in to experimental UI changes and upcoming linting algorithms before public release.",
-                      enabled: false,
-                    },
-                  ].map((pref, i, arr) => (
-                    <div key={pref.title}>
+                  <div className="flex items-center justify-between px-6 py-5">
+                    <div>
+                      <h4 className="text-sm font-medium text-zinc-100">Strict Linting Mode</h4>
+                      <p className="mt-1 max-w-md text-xs text-zinc-400">
+                        Enforce maximum grammatical constraints and flag minor tonal inconsistencies across all projects by default.
+                      </p>
+                    </div>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon-sm"
+                      role="switch"
+                      aria-checked={true}
+                      className="relative h-5 w-9 rounded-full bg-[#22C55E] px-0 transition"
+                    >
+                      <span className="absolute left-[18px] top-[2px] size-4 rounded-full bg-white transition" />
+                    </Button>
+                  </div>
+                  {featureFlags.showBetaFeatures ? (
+                    <>
+                      <Separator className="bg-[#1F2937]" />
                       <div className="flex items-center justify-between px-6 py-5">
                         <div>
-                          <h4 className="text-sm font-medium text-zinc-100">{pref.title}</h4>
-                          <p className="mt-1 max-w-md text-xs text-zinc-400">{pref.description}</p>
+                          <h4 className="text-sm font-medium text-zinc-100">Beta Features Access</h4>
+                          <p className="mt-1 max-w-md text-xs text-zinc-400">
+                            Opt-in to experimental UI changes and upcoming linting algorithms before public release.
+                          </p>
                         </div>
                         <Button
                           type="button"
                           variant="ghost"
                           size="icon-sm"
                           role="switch"
-                          aria-checked={pref.enabled}
-                          className={`relative h-5 w-9 rounded-full px-0 transition ${
-                            pref.enabled ? "bg-[#22C55E]" : "bg-[#1F2937]"
-                          }`}
+                          aria-checked={false}
+                          className="relative h-5 w-9 rounded-full bg-[#1F2937] px-0 transition"
                         >
-                          <span className={`absolute top-[2px] size-4 rounded-full bg-white transition ${pref.enabled ? "left-[18px]" : "left-[2px]"}`} />
+                          <span className="absolute left-[2px] top-[2px] size-4 rounded-full bg-white transition" />
                         </Button>
                       </div>
-                      {i < arr.length - 1 && <Separator className="bg-[#1F2937]" />}
-                    </div>
-                  ))}
+                    </>
+                  ) : null}
                 </Card>
               </section>
             </div>

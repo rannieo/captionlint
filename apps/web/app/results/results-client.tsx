@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import posthog from "posthog-js";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
@@ -60,12 +61,26 @@ export function ResultsClient({ runId, fallbackRun, fallbackExportContent }: Res
     if (isApiRun && runId) {
       try {
         const result = await exportLintRun(runId, run.format as "SRT" | "VTT");
+        posthog.capture("caption_export_downloaded", {
+          preset_id: run.presetId,
+          format: run.format,
+          run_mode: "api",
+          errors: run.summary.error,
+          warnings: run.summary.warn,
+        });
         triggerDownload(result.content, result.filename, run.format);
         return;
       } catch {
         // fall through to local export
       }
     }
+    posthog.capture("caption_export_downloaded", {
+      preset_id: run.presetId,
+      format: run.format,
+      run_mode: "local",
+      errors: run.summary.error,
+      warnings: run.summary.warn,
+    });
     triggerDownload(exportContent, exportFilename(run.filename, run.presetId, run.format), run.format);
   }
 
