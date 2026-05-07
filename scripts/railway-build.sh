@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-service_name="$(printf '%s' "${RAILWAY_SERVICE_NAME:-}" | tr '[:upper:]' '[:lower:]')"
+service_name="$(printf '%s' "${1:-${CAPTIONLINT_RAILWAY_SERVICE:-${RAILWAY_SERVICE_NAME:-}}}" | tr '[:upper:]' '[:lower:]')"
 
 case "$service_name" in
   *api* | *backend*)
@@ -14,7 +14,8 @@ case "$service_name" in
     pnpm --filter web build
     ;;
   *)
-    echo "Set RAILWAY_SERVICE_NAME to api, worker, or web, or set a service-specific config path." >&2
+    echo "Usage: bash scripts/railway-build.sh api|worker|web" >&2
+    echo "Alternatively set CAPTIONLINT_RAILWAY_SERVICE to api, worker, or web." >&2
     exit 1
     ;;
 esac

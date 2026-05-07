@@ -2,11 +2,11 @@
   "$schema": "https://railway.com/railway.schema.json",
   "build": {
     "builder": "RAILPACK",
-    "buildCommand": "pnpm --filter @captionlint/api build"
+    "buildCommand": "bash scripts/railway-build.sh api"
   },
   "deploy": {
-    "preDeployCommand": ["node packages/database/dist/setup.js"],
-    "startCommand": "pnpm --filter @captionlint/api start",
+    "preDeployCommand": ["bash scripts/railway-predeploy.sh api"],
+    "startCommand": "bash scripts/railway-start.sh api",
     "healthcheckPath": "/health",
     "healthcheckTimeout": 100
   }
