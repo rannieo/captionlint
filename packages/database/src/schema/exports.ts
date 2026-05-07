@@ -1,5 +1,5 @@
 import { pgTable, uuid, varchar, text, timestamp, index } from 'drizzle-orm/pg-core';
-import { lintRuns } from './lint-runs.js';
+import { lintRuns } from './lint-runs';
 
 export const exports = pgTable('exports', {
   id: uuid('id').primaryKey().defaultRandom(),

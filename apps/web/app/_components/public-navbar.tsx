@@ -1,6 +1,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import { cn } from "@/lib/utils";
+import { OpenAppButton } from "./open-app-button";
 
 type PublicNavProps = {
   active?: "product" | "features" | "pricing" | "auth";
@@ -52,9 +53,7 @@ export function PublicNavbar({ active, showAuthCta = true, showOpenAppLink = !sh
             </Link>
           </div>
         ) : showOpenAppLink ? (
-          <Link href="/upload" className="text-sm font-medium text-[#22c55e] hover:text-[#4be277]">
-            Open App
-          </Link>
+          <OpenAppButton />
         ) : (
           <div className="w-16" />
         )}

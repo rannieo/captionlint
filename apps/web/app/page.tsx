@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
-import Link from "next/link";
 import { PublicPageShell } from "./_components/public-page-shell";
+import { StartQaButton } from "./_components/start-qa-button";
 
 export const metadata: Metadata = {
   title: "CaptionLint | Fix caption issues before they go live.",
@@ -28,18 +28,7 @@ export default function Home() {
             check, fix, export.
           </p>
           <div className="flex flex-col gap-4 sm:flex-row">
-            <Link
-              href="/upload"
-              className="inline-flex h-11 items-center justify-center gap-2 rounded-md bg-[#22C55E] px-6 text-base font-medium text-[#003915] hover:bg-[#4BE277]"
-            >
-              Start QA Workflow <span data-icon="inline-end">→</span>
-            </Link>
-            <Link
-              href="/upload"
-              className="inline-flex h-11 items-center justify-center gap-2 rounded-md border border-[#3d4a3d] bg-[#131314] px-6 text-base font-medium hover:bg-[#201f20]"
-            >
-              Try Sample Flow <span data-icon="inline-end">↗</span>
-            </Link>
+            <StartQaButton />
           </div>
         </div>
 
@@ -150,7 +139,7 @@ export default function Home() {
           </article>
 
           <article className="flex flex-col rounded-xl border border-[#353436] bg-[#131314] p-8 transition-colors hover:border-[#3d4a3d] md:col-span-2 lg:col-span-1">
-            <div className="mb-6 grid size-12 place-items-center rounded-lg bg-[#242c24]">⚡</div>
+            <div className="mb-6 grid size-12 place-items-center rounded-lg bg-[#242c24] text-white">⚡︎</div>
             <h3 className="mb-2 text-lg font-semibold">Deterministic Engine</h3>
             <p className="mb-6 text-sm text-zinc-400">
               Same input plus same ruleset plus same engine version always returns the same findings.
@@ -174,16 +163,18 @@ export default function Home() {
               Track issues over time, compare presets, and re-export older runs without repeating manual
               edits.
             </p>
-            <div className="flex h-16 items-end gap-2 opacity-80">
-              <div className="h-[40%] w-1/6 rounded-t-sm bg-[#242c24]" />
-              <div className="h-[60%] w-1/6 rounded-t-sm bg-[#242c24]" />
-              <div className="h-[30%] w-1/6 rounded-t-sm bg-[#242c24]" />
-              <div className="h-[80%] w-1/6 rounded-t-sm bg-[#242c24]" />
-              <div className="h-[50%] w-1/6 rounded-t-sm bg-[#242c24]" />
-              <div className="relative h-[20%] w-1/6 rounded-t-sm border-t-2 border-[#22C55E] bg-[#22C55E66]">
-                <span className="absolute -top-6 left-1/2 -translate-x-1/2 text-[9px] uppercase text-[#22C55E]">
-                  New Low
-                </span>
+            <div className="relative pt-7">
+              <div className="flex h-20 items-end gap-1.5">
+                <div className="h-[55%] flex-1 rounded-t-sm bg-[#1e2e1e]" />
+                <div className="h-[72%] flex-1 rounded-t-sm bg-[#1e2e1e]" />
+                <div className="h-[38%] flex-1 rounded-t-sm bg-[#1e2e1e]" />
+                <div className="h-[88%] flex-1 rounded-t-sm bg-[#1e2e1e]" />
+                <div className="h-[62%] flex-1 rounded-t-sm bg-[#1e2e1e]" />
+                <div className="relative h-[22%] flex-1 rounded-t-sm border-t-2 border-[#22C55E] bg-[#22C55E26]">
+                  <span className="absolute -top-5 left-1/2 -translate-x-1/2 whitespace-nowrap text-[9px] font-semibold uppercase tracking-wider text-[#22C55E]">
+                    New Low
+                  </span>
+                </div>
               </div>
             </div>
           </article>

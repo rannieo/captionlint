@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import "./globals.css";
 import { cn } from "@/lib/utils";
 import { TooltipProvider } from "@/components/ui/tooltip";
+import { PostHogProvider } from "./_components/posthog-provider";
 
 export const metadata: Metadata = {
   title: "CaptionLint",
@@ -17,7 +18,9 @@ export default function RootLayout({
   return (
     <html lang="en" className={cn("dark", "font-sans")}>
       <body>
-        <TooltipProvider>{children}</TooltipProvider>
+        <PostHogProvider>
+          <TooltipProvider>{children}</TooltipProvider>
+        </PostHogProvider>
       </body>
     </html>
   );

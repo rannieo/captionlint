@@ -1,8 +1,8 @@
 import type { Metadata } from "next";
 import { pricingCompareRows, pricingPlans } from "../../lib/pricing-data";
-import { Button } from "@/components/ui/button";
 import { PublicPageShell } from "../_components/public-page-shell";
 import { featureFlags } from "@/lib/feature-flags";
+import { PricingCtaButton } from "./pricing-cta-button";
 
 export const metadata: Metadata = {
   title: "CaptionLint | Pricing",
@@ -22,9 +22,11 @@ function CheckMark({ kind }: { kind: "green" | "gray" | "dash" }) {
 }
 
 export default function PricingPage() {
-  const visiblePlans = featureFlags.showTeamPlan
-    ? pricingPlans
-    : pricingPlans.filter((plan) => plan.id !== "team");
+  const visiblePlans = pricingPlans.filter(
+    (plan) =>
+      (featureFlags.showProPlan || plan.id !== "pro") &&
+      (featureFlags.showTeamPlan || plan.id !== "team"),
+  );
   const visibleCompareRows = featureFlags.showAdvancedPricingRows
     ? pricingCompareRows
     : pricingCompareRows;
@@ -42,7 +44,11 @@ export default function PricingPage() {
 
       <div
         className={`mb-20 grid gap-4 ${
-          featureFlags.showTeamPlan ? "lg:grid-cols-3" : "lg:grid-cols-2"
+          featureFlags.showTeamPlan
+            ? "lg:grid-cols-3"
+            : featureFlags.showProPlan
+              ? "lg:grid-cols-2"
+              : "mx-auto max-w-sm"
         }`}
       >
         {visiblePlans.map((plan) => (
@@ -68,16 +74,7 @@ export default function PricingPage() {
               <span className="font-mono text-3xl font-bold">{plan.price}</span>
               <span className="font-mono text-sm text-zinc-400">{plan.period}</span>
             </div>
-            <Button
-              className={`mb-6 h-9 w-full text-[11px] uppercase tracking-wider ${
-                plan.featured
-                  ? "bg-[#22c55e] text-[#003915] hover:bg-[#4be277]"
-                  : "border border-[#3d4a3d] bg-[#131314] text-zinc-100 hover:bg-[#201f20]"
-              }`}
-              variant={plan.featured ? "default" : "outline"}
-            >
-              {plan.cta}
-            </Button>
+            <PricingCtaButton planId={plan.id} cta={plan.cta} featured={plan.featured} />
             <div className="flex flex-1 flex-col gap-4">
               {plan.features.map((feature) => (
                 <div key={feature.text} className="flex items-center gap-2">
@@ -104,9 +101,11 @@ export default function PricingPage() {
                 <th className="border-b border-[#35343680] px-4 py-2 text-center text-[11px] uppercase tracking-wider text-zinc-400">
                   Free
                 </th>
-                <th className="border-b border-[#35343680] px-4 py-2 text-center text-[11px] uppercase tracking-wider text-[#22c55e]">
-                  Pro
-                </th>
+                {featureFlags.showProPlan ? (
+                  <th className="border-b border-[#35343680] px-4 py-2 text-center text-[11px] uppercase tracking-wider text-[#22c55e]">
+                    Pro
+                  </th>
+                ) : null}
                 {featureFlags.showTeamPlan ? (
                   <th className="border-b border-[#35343680] px-4 py-2 text-center text-[11px] uppercase tracking-wider text-zinc-400">
                     Team
@@ -127,15 +126,17 @@ export default function PricingPage() {
                       <span className="font-mono text-xs text-zinc-400">{row.free}</span>
                     )}
                   </td>
-                  <td className="border-b border-[#35343680] px-4 py-3 text-center">
-                    {row.pro === "check" ? (
-                      <CheckMark kind="green" />
-                    ) : row.pro === "dash" ? (
-                      <CheckMark kind="dash" />
-                    ) : (
-                      <span className="font-mono text-xs text-[#22c55e]">{row.pro}</span>
-                    )}
-                  </td>
+                  {featureFlags.showProPlan ? (
+                    <td className="border-b border-[#35343680] px-4 py-3 text-center">
+                      {row.pro === "check" ? (
+                        <CheckMark kind="green" />
+                      ) : row.pro === "dash" ? (
+                        <CheckMark kind="dash" />
+                      ) : (
+                        <span className="font-mono text-xs text-[#22c55e]">{row.pro}</span>
+                      )}
+                    </td>
+                  ) : null}
                   {featureFlags.showTeamPlan ? (
                     <td className="border-b border-[#35343680] px-4 py-3 text-center">
                       {row.team === "check" ? (

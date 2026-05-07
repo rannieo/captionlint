@@ -1,5 +1,5 @@
 import { pgTable, varchar, timestamp, uuid, integer, jsonb, index, text } from 'drizzle-orm/pg-core';
-import { organization, user } from './auth.js';
+import { organization, user } from './auth';
 
 export const lintRuns = pgTable('lint_runs', {
   id: uuid('id').primaryKey().defaultRandom(),
