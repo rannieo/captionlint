@@ -1,3 +1,4 @@
+import Image from "next/image";
 import Link from "next/link";
 import { cn } from "@/lib/utils";
 
@@ -17,8 +18,9 @@ export function PublicNavbar({ active, showAuthCta = true, showOpenAppLink = !sh
   return (
     <header className="fixed inset-x-0 top-0 z-50 border-b border-[#1F2937] bg-slate-950/80 backdrop-blur-md">
       <div className="mx-auto flex h-16 w-full max-w-6xl items-center justify-between px-6">
-        <Link href="/" className="text-xl font-bold tracking-tight">
-          CaptionLint
+        <Link href="/" className="flex items-center gap-2">
+          <Image src="/logo.png" alt="CaptionLint" width={32} height={32} className="rounded" />
+          <span className="text-xl font-bold tracking-tight">CaptionLint</span>
         </Link>
         <nav className="hidden items-center gap-6 md:flex">
           {items.map((item) => (

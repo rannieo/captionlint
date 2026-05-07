@@ -8,12 +8,21 @@ export const metadata: Metadata = {
   description: "Inspect PASS, WARN, and ERROR caption findings with cue-level context.",
 };
 
-export default function ResultsPage() {
+type ResultsPageProps = {
+  searchParams: Promise<{ runId?: string }>;
+};
+
+export default async function ResultsPage({ searchParams }: ResultsPageProps) {
+  const { runId } = await searchParams;
   const fallback = createDemoLintRun();
 
   return (
     <WorkspaceShell>
-      <ResultsClient fallbackRun={fallback.run} fallbackExportContent={fallback.exportContent} />
+      <ResultsClient
+        runId={runId}
+        fallbackRun={fallback.run}
+        fallbackExportContent={fallback.exportContent}
+      />
     </WorkspaceShell>
   );
 }

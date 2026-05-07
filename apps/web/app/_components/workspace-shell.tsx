@@ -1,3 +1,4 @@
+import Image from "next/image";
 import Link from "next/link";
 import { LogOut } from "lucide-react";
 import { WorkspaceNav } from "./workspace-nav";
@@ -11,9 +12,7 @@ export function WorkspaceShell({ children }: WorkspaceShellProps) {
     <div className="min-h-screen bg-[#0B0F14]">
       <aside className="fixed left-0 top-0 z-50 hidden h-screen w-[280px] flex-col border-r border-[#1F2937] bg-[#111112] py-4 md:flex">
         <div className="flex items-center gap-3 px-6 pb-8 pt-1">
-          <div className="grid size-8 place-items-center rounded bg-[#22C55E]">
-            <span className="text-[10px] font-bold text-[#0A0A0B]">CC</span>
-          </div>
+          <Image src="/logo.png" alt="CaptionLint" width={32} height={32} className="rounded" />
           <div>
             <strong className="block text-lg font-bold tracking-tight text-[#22C55E]">
               CaptionLint

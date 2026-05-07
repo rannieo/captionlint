@@ -13,6 +13,8 @@ export type LintJobData = {
   vocabularyTerms: string[];
   format: 'SRT' | 'VTT';
   engineVersion: string;
+  organizationId?: string;
+  assetId?: string;
 };
 
 const queueOptions: QueueOptions = {

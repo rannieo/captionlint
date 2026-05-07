@@ -10,6 +10,8 @@ export type CreateLintRunInput = {
   presetId: string;
   engineVersion: string;
   cues: Array<{ index: number; startMs: number; endMs: number; text: string; lines: string[] }>;
+  assetId?: string;
+  summary?: { pass: number; warn: number; error: number; total: number };
 };
 
 export type LintRunRow = typeof lintRuns.$inferSelect;
@@ -35,8 +37,9 @@ export class DrizzleLintRunRepository implements ILintRunRepository {
         presetId: input.presetId,
         engineVersion: input.engineVersion,
         status: 'QUEUED',
-        summary: { pass: 0, warn: 0, error: 0, total: 0 },
+        summary: input.summary ?? { pass: 0, warn: 0, error: 0, total: 0 },
         cues: input.cues,
+        assetId: input.assetId,
       })
       .returning();
 

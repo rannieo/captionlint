@@ -6,6 +6,9 @@ import { authRoute } from './routes/auth.js';
 import { healthRoute } from './routes/health.js';
 import { lintRunsRoute } from './routes/lint-runs.js';
 import { vocabularyRoute } from './routes/vocabulary.js';
+import { assetsRoute } from './routes/assets.js';
+import { historyRoute } from './routes/history.js';
+import { rulesetsRoute } from './routes/rulesets.js';
 
 const fastify = Fastify({ logger: true });
 
@@ -22,6 +25,9 @@ await fastify.register(authRoute);
 await fastify.register(healthRoute);
 await fastify.register(lintRunsRoute, { prefix: '/lint-runs' });
 await fastify.register(vocabularyRoute, { prefix: '/vocabulary' });
+await fastify.register(assetsRoute, { prefix: '/assets' });
+await fastify.register(historyRoute, { prefix: '/history' });
+await fastify.register(rulesetsRoute, { prefix: '/rulesets' });
 
 const port = parseInt(process.env.API_PORT ?? '4000', 10);
 const host = process.env.API_HOST ?? '0.0.0.0';

@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import { useState } from "react";
 import { Menu } from "lucide-react";
 import { Sheet, SheetContent, SheetTitle } from "@/components/ui/sheet";
@@ -23,9 +24,7 @@ export function MobileNavSheet() {
         <SheetContent side="left" className="w-[280px] border-r border-[#1F2937] bg-[#111112] p-0">
           <SheetTitle className="sr-only">Navigation</SheetTitle>
           <div className="flex items-center gap-3 px-6 pb-8 pt-5">
-            <div className="grid size-8 place-items-center rounded bg-[#22C55E]">
-              <span className="text-[10px] font-bold text-[#0A0A0B]">CC</span>
-            </div>
+            <Image src="/logo.png" alt="CaptionLint" width={32} height={32} className="rounded" />
             <div>
               <strong className="block text-lg font-bold tracking-tight text-[#22C55E]">
                 CaptionLint

@@ -25,6 +25,8 @@ export class LintRunService {
       vocabularyTerms: params.vocabularyTerms ?? [],
       format: params.format,
       engineVersion: params.engineVersion,
+      organizationId: params.organizationId,
+      assetId: params.assetId,
     });
 
     return run;

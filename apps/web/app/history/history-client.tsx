@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
+import { useRouter } from "next/navigation";
 import { WorkspaceShell } from "../_components/workspace-shell";
 import { WorkspaceTopbar } from "../_components/workspace-topbar";
 import type { HistoryRun } from "@/lib/history-data";
@@ -19,6 +20,8 @@ import {
 } from "@/components/ui/table";
 import { readHistoryRuns } from "@/lib/workflow-storage";
 import { mergeAndSortRuns } from "@/lib/history-utils";
+import { authClient } from "@/lib/auth-client";
+import { listHistory, refixHistory, type HistoryItem } from "@repo/api-client";
 
 type HistoryClientProps = {
   runs: HistoryRun[];
@@ -29,16 +32,48 @@ function parseHistoryDate(value: string): number {
   return Number.isNaN(parsed) ? 0 : parsed;
 }
 
+function apiItemToHistoryRun(item: HistoryItem): HistoryRun {
+  const { pass: _pass, warn, error, total } = item.summary;
+  const pending = warn + error;
+  return {
+    id: item.id,
+    lintRunId: item.lintRunId,
+    isApiRun: true,
+    file: item.filename,
+    presets: [item.preset],
+    date: item.createdAt.replace("T", " ").slice(0, 19),
+    autoFixed: total - pending,
+    pending,
+    pendingLabel: pending === 0 ? "0 Violations Found" : `${pending} Pending Review`,
+    status: error > 0 ? "review" : warn > 0 ? "fixed" : "clean",
+  };
+}
+
 export function HistoryClient({ runs }: HistoryClientProps) {
+  const router = useRouter();
+  const { data: session } = authClient.useSession();
+  const [orgId, setOrgId] = useState<string | undefined>();
   const [browserRuns, setBrowserRuns] = useState<HistoryRun[]>([]);
+  const [apiRuns, setApiRuns] = useState<HistoryRun[]>([]);
   const [query, setQuery] = useState("");
   const [presetFilter, setPresetFilter] = useState("all");
   const [dateFilter, setDateFilter] = useState<"all" | "7d">("all");
-  const allRuns = useMemo(() => mergeAndSortRuns(browserRuns, runs), [browserRuns, runs]);
+  const allRuns = useMemo(() => mergeAndSortRuns(browserRuns, [...apiRuns, ...runs]), [browserRuns, apiRuns, runs]);
 
   useEffect(() => {
     setBrowserRuns(readHistoryRuns());
   }, []);
+
+  useEffect(() => {
+    if (!session?.user) return;
+    authClient.organization.list().then((result) => {
+      const orgs = result.data;
+      const id = orgs?.[0]?.id;
+      if (!id) return;
+      setOrgId(id);
+      listHistory(id).then((items) => setApiRuns(items.map(apiItemToHistoryRun))).catch(() => {});
+    }).catch(() => {});
+  }, [session?.user]);
 
   const presetOptions = useMemo(
     () => Array.from(new Set(allRuns.flatMap((run) => run.presets))).sort((a, b) => a.localeCompare(b)),
@@ -75,6 +110,13 @@ export function HistoryClient({ runs }: HistoryClientProps) {
     link.download = `${base}.captionlint.${extension}`;
     link.click();
     URL.revokeObjectURL(url);
+  }
+
+  async function refixApiRun(run: HistoryRun) {
+    if (!run.isApiRun) return;
+    const presetId = run.presets[0] ?? "default";
+    const result = await refixHistory(run.id, presetId);
+    router.push(`/results?runId=${result.runId}`);
   }
 
   return (
@@ -190,25 +232,41 @@ export function HistoryClient({ runs }: HistoryClientProps) {
                       </TableCell>
                       <TableCell className="px-4 py-3 text-right">
                         <div className="flex justify-end gap-1">
-                          <Button
-                            type="button"
-                            size="icon-sm"
-                            variant="ghost"
-                            className="text-zinc-400 hover:text-[#22c55e]"
-                            render={
-                              <Link
-                                href={
-                                  "rawContent" in run && run.rawContent
-                                    ? `/upload?runId=${encodeURIComponent(run.id)}`
-                                    : `/upload?source=${encodeURIComponent(run.file)}&preset=${encodeURIComponent(run.presets[0] ?? "Default")}`
-                                }
-                              />
-                            }
-                            nativeButton={false}
-                            title="Re-run"
-                          >
-                            ↺
-                          </Button>
+                          {run.isApiRun ? (
+                            <Button
+                              type="button"
+                              size="icon-sm"
+                              variant="ghost"
+                              className="text-zinc-400 hover:text-[#22c55e]"
+                              title="Re-run"
+                              onClick={() => refixApiRun(run)}
+                            >
+                              ↺
+                            </Button>
+                          ) : run.rawContent ? (
+                            <Button
+                              type="button"
+                              size="icon-sm"
+                              variant="ghost"
+                              className="text-zinc-400 hover:text-[#22c55e]"
+                              render={<Link href={`/upload?runId=${encodeURIComponent(run.id)}`} />}
+                              nativeButton={false}
+                              title="Re-run"
+                            >
+                              ↺
+                            </Button>
+                          ) : (
+                            <Button
+                              type="button"
+                              size="icon-sm"
+                              variant="ghost"
+                              className="cursor-not-allowed text-zinc-600 opacity-40"
+                              disabled
+                              title="Demo run — upload the file to re-fix"
+                            >
+                              ↺
+                            </Button>
+                          )}
                           <Button
                             type="button"
                             size="icon-sm"
@@ -225,9 +283,17 @@ export function HistoryClient({ runs }: HistoryClientProps) {
                             size="icon-sm"
                             variant="ghost"
                             className="text-zinc-400 hover:text-zinc-100"
-                            render={<Link href={`/history/${run.id}`} />}
+                            render={
+                              <Link
+                                href={
+                                  run.isApiRun && run.lintRunId
+                                    ? `/results?runId=${run.lintRunId}`
+                                    : `/history/${run.id}`
+                                }
+                              />
+                            }
                             nativeButton={false}
-                            title="Edit History Item"
+                            title="View Results"
                           >
                             ✎
                           </Button>

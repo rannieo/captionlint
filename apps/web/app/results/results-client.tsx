@@ -8,21 +8,36 @@ import { createDemoLintRun, exportFilename } from "@/lib/workflow-data";
 import { readCurrentRun } from "@/lib/workflow-storage";
 import { WorkspaceTopbar } from "@/app/_components/workspace-topbar";
 import type { LintFinding, LintRun, Severity } from "@repo/shared-types";
+import { exportLintRun, getLintRun, getLintRunFindings } from "@repo/api-client";
 
 type ResultsClientProps = {
+  runId?: string;
   fallbackRun: LintRun;
   fallbackExportContent: string;
 };
 
 const severityFilters: Array<Severity | "ALL"> = ["ALL", "ERROR", "WARN", "PASS"];
 
-export function ResultsClient({ fallbackRun, fallbackExportContent }: ResultsClientProps) {
+export function ResultsClient({ runId, fallbackRun, fallbackExportContent }: ResultsClientProps) {
   const [run, setRun] = useState(fallbackRun);
   const [exportContent, setExportContent] = useState(fallbackExportContent);
   const [activeSeverity, setActiveSeverity] = useState<Severity | "ALL">("ALL");
-  const [activeCueIndex, setActiveCueIndex] = useState<number | undefined>(run.findings[0]?.cueIndex);
+  const [activeCueIndex, setActiveCueIndex] = useState<number | undefined>(fallbackRun.findings[0]?.cueIndex);
+  const [isApiRun, setIsApiRun] = useState(false);
 
   useEffect(() => {
+    if (runId) {
+      Promise.all([getLintRun(runId), getLintRunFindings(runId)])
+        .then(([apiRun, apiFindings]) => {
+          const fullRun: LintRun = { ...apiRun, findings: apiFindings };
+          setRun(fullRun);
+          setActiveCueIndex(apiFindings[0]?.cueIndex);
+          setIsApiRun(true);
+        })
+        .catch(() => {});
+      return;
+    }
+
     const stored = readCurrentRun();
     if (stored) {
       setRun(stored.run);
@@ -34,21 +49,24 @@ export function ResultsClient({ fallbackRun, fallbackExportContent }: ResultsCli
     const demo = createDemoLintRun();
     setRun(demo.run);
     setExportContent(demo.exportContent);
-  }, []);
+  }, [runId]);
 
   const filteredFindings = useMemo(() => {
     if (activeSeverity === "ALL") return run.findings;
     return run.findings.filter((finding) => finding.severity === activeSeverity);
   }, [activeSeverity, run.findings]);
 
-  function downloadExport() {
-    const blob = new Blob([exportContent], { type: run.format === "VTT" ? "text/vtt" : "text/plain" });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement("a");
-    link.href = url;
-    link.download = exportFilename(run.filename, run.presetId, run.format);
-    link.click();
-    URL.revokeObjectURL(url);
+  async function downloadExport() {
+    if (isApiRun && runId) {
+      try {
+        const result = await exportLintRun(runId, run.format as "SRT" | "VTT");
+        triggerDownload(result.content, result.filename, run.format);
+        return;
+      } catch {
+        // fall through to local export
+      }
+    }
+    triggerDownload(exportContent, exportFilename(run.filename, run.presetId, run.format), run.format);
   }
 
   return (
@@ -140,7 +158,7 @@ export function ResultsClient({ fallbackRun, fallbackExportContent }: ResultsCli
                     {cueFindings.length > 0 ? (
                       <div className="mt-2 flex flex-wrap gap-1">
                         {cueFindings.map((finding) => (
-                          <Badge key={finding.id} variant="outline" className={cn("h-auto rounded border-transparent px-2 py-0.5 text-[10px]", severityTextClass(finding.severity))}>
+                          <Badge key={finding.id} variant="outline" className={cn("h-auto rounded border-transparent bg-transparent px-2 py-0.5 text-[10px]", severityTextClass(finding.severity))}>
                             {finding.ruleCode}
                           </Badge>
                         ))}
@@ -155,6 +173,16 @@ export function ResultsClient({ fallbackRun, fallbackExportContent }: ResultsCli
       </div>
     </>
   );
+}
+
+function triggerDownload(content: string, filename: string, format: string) {
+  const blob = new Blob([content], { type: format === "VTT" ? "text/vtt" : "text/plain" });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement("a");
+  link.href = url;
+  link.download = filename;
+  link.click();
+  URL.revokeObjectURL(url);
 }
 
 function SeverityMetric({ severity, value, label }: { severity: Severity; value: number; label: string }) {

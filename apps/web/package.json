@@ -16,11 +16,13 @@
   },
   "dependencies": {
     "@base-ui/react": "^1.4.1",
+    "@repo/api-client": "workspace:*",
     "@repo/caption-parser": "workspace:*",
     "@repo/config": "workspace:*",
     "@repo/lint-engine": "workspace:*",
     "@repo/shared-types": "workspace:*",
     "@repo/ui": "workspace:*",
+    "better-auth": "^1.6.9",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "lucide-react": "^1.14.0",

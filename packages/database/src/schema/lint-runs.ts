@@ -3,6 +3,7 @@ import { organization, user } from './auth.js';
 
 export const lintRuns = pgTable('lint_runs', {
   id: uuid('id').primaryKey().defaultRandom(),
+  assetId: uuid('asset_id'),
   organizationId: text('organization_id')
     .notNull()
     .references(() => organization.id, { onDelete: 'cascade' }),

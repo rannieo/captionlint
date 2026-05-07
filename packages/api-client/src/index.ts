@@ -2,11 +2,14 @@ import type { LintRun, LintFinding, LintRunStatus, VocabularyTerm } from '@repo/
 
 const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000';
 
+// ── Lint Runs ──────────────────────────────────────────────────────────────
+
 export type CreateLintRunPayload = {
   filename: string;
   format: 'SRT' | 'VTT';
   presetId: string;
   engineVersion: string;
+  organizationId: string;
   cues: Array<{
     index: number;
     startMs: number;
@@ -15,7 +18,6 @@ export type CreateLintRunPayload = {
     lines: string[];
   }>;
   vocabularyTerms?: string[];
-  workspaceId?: string;
 };
 
 export type CreateLintRunResponse = {
@@ -31,6 +33,103 @@ export type GetFindingsResponse = {
   findings: LintFinding[];
 };
 
+export async function createLintRun(payload: CreateLintRunPayload): Promise<CreateLintRunResponse> {
+  const res = await fetch(`${API_BASE}/lint-runs`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    credentials: 'include',
+    body: JSON.stringify(payload),
+  });
+  if (!res.ok) throw new Error(`Failed to create lint run: ${await res.text()}`);
+  return res.json();
+}
+
+export async function getLintRun(id: string): Promise<LintRun> {
+  const res = await fetch(`${API_BASE}/lint-runs/${id}`, { credentials: 'include' });
+  if (!res.ok) throw new Error(`Failed to get lint run: ${await res.text()}`);
+  return res.json();
+}
+
+export async function listLintRuns(organizationId?: string, limit?: number): Promise<LintRun[]> {
+  const params = new URLSearchParams();
+  if (organizationId) params.set('organizationId', organizationId);
+  if (limit) params.set('limit', limit.toString());
+  const res = await fetch(`${API_BASE}/lint-runs?${params}`, { credentials: 'include' });
+  if (!res.ok) throw new Error(`Failed to list lint runs: ${await res.text()}`);
+  const data: ListLintRunsResponse = await res.json();
+  return data.runs;
+}
+
+export async function getLintRunFindings(runId: string): Promise<LintFinding[]> {
+  const res = await fetch(`${API_BASE}/lint-runs/${runId}/findings`, { credentials: 'include' });
+  if (!res.ok) throw new Error(`Failed to get findings: ${await res.text()}`);
+  const data: GetFindingsResponse = await res.json();
+  return data.findings;
+}
+
+export async function exportLintRun(runId: string, format?: 'SRT' | 'VTT'): Promise<{ content: string; format: string; filename: string }> {
+  const params = format ? `?format=${format}` : '';
+  const res = await fetch(`${API_BASE}/lint-runs/${runId}/export${params}`, {
+    method: 'POST',
+    credentials: 'include',
+  });
+  if (!res.ok) throw new Error(`Failed to export lint run: ${await res.text()}`);
+  return res.json();
+}
+
+export async function deleteLintRun(id: string): Promise<void> {
+  const res = await fetch(`${API_BASE}/lint-runs/${id}`, { method: 'DELETE', credentials: 'include' });
+  if (!res.ok) throw new Error(`Failed to delete lint run: ${await res.text()}`);
+}
+
+export async function pollLintStatus(
+  runId: string,
+  maxAttempts = 60,
+  intervalMs = 500
+): Promise<LintRun> {
+  for (let i = 0; i < maxAttempts; i++) {
+    const run = await getLintRun(runId);
+    if (run.status === 'PASSED' || run.status === 'FAILED' || run.status === 'ERROR') return run;
+    await new Promise((resolve) => setTimeout(resolve, intervalMs));
+  }
+  throw new Error('Lint run timed out');
+}
+
+// ── Assets ─────────────────────────────────────────────────────────────────
+
+export type CreateAssetPayload = {
+  filename: string;
+  format: 'SRT' | 'VTT';
+  content: string;
+  organizationId: string;
+  durationMs?: number;
+};
+
+export type CreateAssetResponse = {
+  id: string;
+  filename: string;
+  format: string;
+};
+
+export async function createAsset(payload: CreateAssetPayload): Promise<CreateAssetResponse> {
+  const res = await fetch(`${API_BASE}/assets`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    credentials: 'include',
+    body: JSON.stringify(payload),
+  });
+  if (!res.ok) throw new Error(`Failed to create asset: ${await res.text()}`);
+  return res.json();
+}
+
+export async function getAsset(id: string): Promise<Omit<CreateAssetResponse, 'format'> & { format: 'SRT' | 'VTT'; checksum: string; createdAt: string }> {
+  const res = await fetch(`${API_BASE}/assets/${id}`, { credentials: 'include' });
+  if (!res.ok) throw new Error(`Failed to get asset: ${await res.text()}`);
+  return res.json();
+}
+
+// ── Vocabulary ─────────────────────────────────────────────────────────────
+
 export type ListVocabularyResponse = {
   terms: VocabularyTerm[];
 };
@@ -38,154 +137,103 @@ export type ListVocabularyResponse = {
 export type AddVocabularyPayload = {
   term: string;
   caseSensitive?: boolean;
-  workspaceId?: string;
+  organizationId: string;
 };
 
-/**
- * Create a new lint run (queues job for processing)
- */
-export async function createLintRun(payload: CreateLintRunPayload): Promise<CreateLintRunResponse> {
-  const res = await fetch(`${API_BASE}/lint-runs`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(payload),
-  });
-  if (!res.ok) {
-    const error = await res.text();
-    throw new Error(`Failed to create lint run: ${error}`);
-  }
-  return res.json();
-}
-
-/**
- * Get a single lint run by ID
- */
-export async function getLintRun(id: string): Promise<LintRun> {
-  const res = await fetch(`${API_BASE}/lint-runs/${id}`);
-  if (!res.ok) {
-    const error = await res.text();
-    throw new Error(`Failed to get lint run: ${error}`);
-  }
-  return res.json();
-}
-
-/**
- * List lint runs for a workspace
- */
-export async function listLintRuns(workspaceId?: string, limit?: number): Promise<LintRun[]> {
+export async function listVocabularyTerms(organizationId?: string): Promise<VocabularyTerm[]> {
   const params = new URLSearchParams();
-  if (workspaceId) params.set('workspaceId', workspaceId);
-  if (limit) params.set('limit', limit.toString());
-
-  const res = await fetch(`${API_BASE}/lint-runs?${params}`);
-  if (!res.ok) {
-    const error = await res.text();
-    throw new Error(`Failed to list lint runs: ${error}`);
-  }
-  const data = await res.json();
-  return data.runs;
-}
-
-/**
- * Get findings for a lint run
- */
-export async function getLintRunFindings(runId: string): Promise<LintFinding[]> {
-  const res = await fetch(`${API_BASE}/lint-runs/${runId}/findings`);
-  if (!res.ok) {
-    const error = await res.text();
-    throw new Error(`Failed to get findings: ${error}`);
-  }
-  const data = await res.json();
-  return data.findings;
-}
-
-/**
- * Delete a lint run
- */
-export async function deleteLintRun(id: string): Promise<void> {
-  const res = await fetch(`${API_BASE}/lint-runs/${id}`, {
-    method: 'DELETE',
-  });
-  if (!res.ok) {
-    const error = await res.text();
-    throw new Error(`Failed to delete lint run: ${error}`);
-  }
-}
-
-/**
- * List vocabulary terms
- */
-export async function listVocabularyTerms(workspaceId?: string): Promise<VocabularyTerm[]> {
-  const params = new URLSearchParams();
-  if (workspaceId) params.set('workspaceId', workspaceId);
-
-  const res = await fetch(`${API_BASE}/vocabulary?${params}`);
-  if (!res.ok) {
-    const error = await res.text();
-    throw new Error(`Failed to list vocabulary: ${error}`);
-  }
-  const data = await res.json();
+  if (organizationId) params.set('organizationId', organizationId);
+  const res = await fetch(`${API_BASE}/vocabulary?${params}`, { credentials: 'include' });
+  if (!res.ok) throw new Error(`Failed to list vocabulary: ${await res.text()}`);
+  const data: ListVocabularyResponse = await res.json();
   return data.terms;
 }
 
-/**
- * Add a vocabulary term
- */
 export async function addVocabularyTerm(payload: AddVocabularyPayload): Promise<VocabularyTerm> {
   const res = await fetch(`${API_BASE}/vocabulary`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
+    credentials: 'include',
     body: JSON.stringify(payload),
   });
-  if (!res.ok) {
-    const error = await res.text();
-    throw new Error(`Failed to add vocabulary term: ${error}`);
-  }
+  if (!res.ok) throw new Error(`Failed to add vocabulary term: ${await res.text()}`);
   return res.json();
 }
 
-/**
- * Delete a vocabulary term
- */
 export async function deleteVocabularyTerm(id: string): Promise<void> {
-  const res = await fetch(`${API_BASE}/vocabulary/${id}`, {
-    method: 'DELETE',
-  });
-  if (!res.ok) {
-    const error = await res.text();
-    throw new Error(`Failed to delete vocabulary term: ${error}`);
-  }
+  const res = await fetch(`${API_BASE}/vocabulary/${id}`, { method: 'DELETE', credentials: 'include' });
+  if (!res.ok) throw new Error(`Failed to delete vocabulary term: ${await res.text()}`);
 }
 
-/**
- * Health check
- */
+// ── History ────────────────────────────────────────────────────────────────
+
+export type HistoryItem = {
+  id: string;
+  organizationId: string;
+  assetId?: string;
+  lintRunId: string;
+  exportId?: string;
+  filename: string;
+  preset: string;
+  summary: { pass: number; warn: number; error: number; total: number };
+  createdAt: string;
+};
+
+export async function listHistory(
+  organizationId: string,
+  filters?: { filename?: string; preset?: string; limit?: number }
+): Promise<HistoryItem[]> {
+  const params = new URLSearchParams({ organizationId });
+  if (filters?.filename) params.set('filename', filters.filename);
+  if (filters?.preset) params.set('preset', filters.preset);
+  if (filters?.limit) params.set('limit', filters.limit.toString());
+  const res = await fetch(`${API_BASE}/history?${params}`, { credentials: 'include' });
+  if (!res.ok) throw new Error(`Failed to list history: ${await res.text()}`);
+  const data = await res.json();
+  return data.items;
+}
+
+export async function refixHistory(historyItemId: string, presetId: string): Promise<{ runId: string }> {
+  const res = await fetch(`${API_BASE}/history/${historyItemId}/refix`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    credentials: 'include',
+    body: JSON.stringify({ presetId }),
+  });
+  if (!res.ok) throw new Error(`Failed to refix history item: ${await res.text()}`);
+  return res.json();
+}
+
+// ── Rulesets ───────────────────────────────────────────────────────────────
+
+export type RulesetItem = {
+  id: string;
+  label: string;
+  description: string;
+  maxCharactersPerLine: number;
+  maxLinesPerCue: number;
+  maxCharactersPerSecond: number;
+  minCueDurationMs: number;
+  maxCueDurationMs: number;
+};
+
+export async function listRulesets(): Promise<RulesetItem[]> {
+  const res = await fetch(`${API_BASE}/rulesets`);
+  if (!res.ok) throw new Error(`Failed to list rulesets: ${await res.text()}`);
+  const data = await res.json();
+  return data.rulesets;
+}
+
+export async function getRuleset(id: string): Promise<RulesetItem> {
+  const res = await fetch(`${API_BASE}/rulesets/${id}`);
+  if (!res.ok) throw new Error(`Failed to get ruleset: ${await res.text()}`);
+  return res.json();
+}
+
+// ── Health ─────────────────────────────────────────────────────────────────
+
 export async function checkApiHealth(): Promise<{ status: string; timestamp: string; uptime: number }> {
   const res = await fetch(`${API_BASE}/health`);
-  if (!res.ok) {
-    throw new Error('API health check failed');
-  }
+  if (!res.ok) throw new Error('API health check failed');
   return res.json();
-}
-
-/**
- * Poll for lint run completion
- */
-export async function pollLintStatus(
-  runId: string,
-  maxAttempts: number = 60,
-  intervalMs: number = 500
-): Promise<LintRun> {
-  for (let i = 0; i < maxAttempts; i++) {
-    const run = await getLintRun(runId);
-    if (run.status === 'PASSED' || run.status === 'FAILED' || run.status === 'ERROR') {
-      return run;
-    }
-    await sleep(intervalMs);
-  }
-  throw new Error('Lint run timed out');
-}
-
-function sleep(ms: number): Promise<void> {
-  return new Promise((resolve) => setTimeout(resolve, ms));
 }

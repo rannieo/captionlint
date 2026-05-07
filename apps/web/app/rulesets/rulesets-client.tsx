@@ -14,16 +14,36 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { readVocabularyTerms, writeVocabularyTerms } from "@/lib/workflow-storage";
+import { authClient } from "@/lib/auth-client";
+import { listVocabularyTerms, addVocabularyTerm, deleteVocabularyTerm } from "@repo/api-client";
+import type { VocabularyTerm } from "@repo/shared-types";
 
 export function RulesetsClient() {
-  const [terms, setTerms] = useState<string[]>(defaultVocabularyTerms);
+  const { data: session } = authClient.useSession();
+  const [orgId, setOrgId] = useState<string | undefined>();
+  const [apiTerms, setApiTerms] = useState<VocabularyTerm[] | undefined>();
+  const [localTerms, setLocalTerms] = useState<string[]>(defaultVocabularyTerms);
   const [draft, setDraft] = useState("");
   const [query, setQuery] = useState("");
   const [message, setMessage] = useState("Exact matching is used for MVP protected terms.");
 
+  const isApi = Boolean(orgId && apiTerms);
+  const terms = isApi ? apiTerms!.map((t) => t.term) : localTerms;
+
   useEffect(() => {
-    setTerms(readVocabularyTerms() ?? defaultVocabularyTerms);
+    setLocalTerms(readVocabularyTerms() ?? defaultVocabularyTerms);
   }, []);
+
+  useEffect(() => {
+    if (!session?.user) return;
+    authClient.organization.list().then((result) => {
+      const orgs = result.data;
+      const id = orgs?.[0]?.id;
+      if (!id) return;
+      setOrgId(id);
+      listVocabularyTerms(id).then(setApiTerms).catch(() => {});
+    }).catch(() => {});
+  }, [session?.user]);
 
   const filteredTerms = useMemo(() => {
     const normalizedQuery = query.trim().toLowerCase();
@@ -31,25 +51,38 @@ export function RulesetsClient() {
     return terms.filter((term) => term.toLowerCase().includes(normalizedQuery));
   }, [query, terms]);
 
-  function saveTerms(nextTerms: string[]) {
-    setTerms(nextTerms);
-    writeVocabularyTerms(nextTerms);
-  }
-
-  function addTerm() {
+  async function addTerm() {
     const term = draft.trim();
     if (!term) return;
     if (terms.some((item) => item.toLowerCase() === term.toLowerCase())) {
       setMessage(`${term} is already protected.`);
       return;
     }
-    saveTerms([...terms, term].sort((a, b) => a.localeCompare(b)));
+
+    if (isApi && orgId) {
+      const newTerm = await addVocabularyTerm({ term, organizationId: orgId });
+      setApiTerms((prev) => [...(prev ?? []), newTerm].sort((a, b) => a.term.localeCompare(b.term)));
+    } else {
+      const next = [...localTerms, term].sort((a, b) => a.localeCompare(b));
+      setLocalTerms(next);
+      writeVocabularyTerms(next);
+    }
     setDraft("");
     setMessage(`${term} will be checked during future lint runs.`);
   }
 
-  function removeTerm(term: string) {
-    saveTerms(terms.filter((item) => item !== term));
+  async function removeTerm(term: string) {
+    if (isApi && apiTerms) {
+      const found = apiTerms.find((t) => t.term === term);
+      if (found) {
+        await deleteVocabularyTerm(found.id);
+        setApiTerms((prev) => prev?.filter((t) => t.id !== found.id));
+      }
+    } else {
+      const next = localTerms.filter((item) => item !== term);
+      setLocalTerms(next);
+      writeVocabularyTerms(next);
+    }
     setMessage(`${term} removed from future lint runs.`);
   }
 
@@ -59,7 +92,7 @@ export function RulesetsClient() {
         <h3 className="mb-1 text-lg font-semibold text-zinc-100">Add Protected Term</h3>
         <p className="mb-6 text-sm text-zinc-400">Protect brand names, product names, and technical terms from awkward line breaks.</p>
 
-        <form className="flex flex-col gap-5" onSubmit={(event) => { event.preventDefault(); addTerm(); }}>
+        <form className="flex flex-col gap-5" onSubmit={(event) => { event.preventDefault(); void addTerm(); }}>
           <div className="flex flex-col gap-2">
             <label className="text-xs font-semibold uppercase tracking-wider text-zinc-300">Term</label>
             <Input
@@ -120,7 +153,7 @@ export function RulesetsClient() {
                       </Badge>
                     </TableCell>
                     <TableCell className="px-4 py-3 text-right">
-                      <Button type="button" variant="ghost" size="sm" className="h-7 text-zinc-400 hover:text-[#ef4444]" onClick={() => removeTerm(term)}>
+                      <Button type="button" variant="ghost" size="sm" className="h-7 text-zinc-400 hover:text-[#ef4444]" onClick={() => void removeTerm(term)}>
                         Remove
                       </Button>
                     </TableCell>

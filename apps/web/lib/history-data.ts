@@ -11,6 +11,8 @@ export type HistoryRun = {
   rawContent?: string;
   format?: "SRT" | "VTT";
   isDemo?: boolean;
+  isApiRun?: boolean;
+  lintRunId?: string;
 };
 
 export const historyRuns: HistoryRun[] = [

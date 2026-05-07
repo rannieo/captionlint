@@ -1,5 +1,5 @@
 import { getCaptionPreset } from "@repo/config";
-import type { CaptionCue, CaptionPreset, LintFinding, LintRun, LintSummary, PresetId, Severity } from "@repo/shared-types";
+import type { CaptionCue, CaptionPreset, LintFinding, LintRun, LintSummary, ParserWarning, PresetId, Severity } from "@repo/shared-types";
 
 export const LINT_ENGINE_VERSION = "0.1.0";
 
@@ -10,13 +10,14 @@ export type LintOptions = {
   presetId?: PresetId;
   preset?: CaptionPreset;
   vocabularyTerms?: string[];
+  parserWarnings?: ParserWarning[];
   now?: string;
 };
 
 export function lintCaptions(cues: CaptionCue[], options: LintOptions = {}): LintRun {
   const preset = options.preset ?? getCaptionPreset(options.presetId);
   const runId = options.runId ?? stableRunId(cues, preset.id, options.filename ?? "captions.srt");
-  const findings = buildFindings(cues, preset, runId, options.vocabularyTerms ?? []);
+  const findings = buildFindings(cues, preset, runId, options.vocabularyTerms ?? [], options.parserWarnings ?? []);
   const summary = summarizeFindings(findings);
   const now = options.now ?? new Date().toISOString();
 
@@ -67,8 +68,38 @@ export function applySafeFixes(cues: CaptionCue[], findings: LintFinding[]): Cap
   });
 }
 
-function buildFindings(cues: CaptionCue[], preset: CaptionPreset, runId: string, vocabularyTerms: string[]): LintFinding[] {
+function buildFindings(cues: CaptionCue[], preset: CaptionPreset, runId: string, vocabularyTerms: string[], parserWarnings: ParserWarning[]): LintFinding[] {
   const findings: LintFinding[] = [];
+
+  // Convert structural parser warnings to findings
+  for (const warning of parserWarnings) {
+    if (warning.code === "MALFORMED_CUE") {
+      findings.push({
+        id: `${runId}:STRUCT.MALFORMED_CUE:${warning.cueIndex ?? "x"}`,
+        runId,
+        ruleCode: "STRUCT.MALFORMED_CUE",
+        category: "structure",
+        severity: severityFor(preset, "STRUCT.MALFORMED_CUE"),
+        cueIndex: warning.cueIndex,
+        message: warning.message,
+        details: { cueIndex: warning.cueIndex },
+      });
+    } else if (warning.code === "MALFORMED_TIMESTAMP") {
+      findings.push({
+        id: `${runId}:STRUCT.MISSING_TIMESTAMP:${warning.cueIndex ?? "x"}`,
+        runId,
+        ruleCode: "STRUCT.MISSING_TIMESTAMP",
+        category: "structure",
+        severity: severityFor(preset, "STRUCT.MISSING_TIMESTAMP"),
+        cueIndex: warning.cueIndex,
+        message: warning.message,
+        details: { cueIndex: warning.cueIndex },
+      });
+    }
+  }
+
+  // Check for duplicate cue indexes
+  findings.push(...checkDuplicateIndexes(cues, preset, runId));
 
   cues.forEach((cue, cuePosition) => {
     findings.push(...checkEmptyCue(cue, preset, runId));
@@ -104,6 +135,25 @@ function buildFindings(cues: CaptionCue[], preset: CaptionPreset, runId: string,
   }
 
   return findings;
+}
+
+function checkDuplicateIndexes(cues: CaptionCue[], preset: CaptionPreset, runId: string): LintFinding[] {
+  const seen = new Map<number, number>();
+  return cues.flatMap((cue, pos) => {
+    if (seen.has(cue.index)) {
+      return [makeFinding({
+        runId,
+        cue,
+        ruleCode: "STRUCT.DUPLICATE_INDEX",
+        category: "structure",
+        severity: severityFor(preset, "STRUCT.DUPLICATE_INDEX"),
+        message: `Cue index ${cue.index} appears more than once.`,
+        details: { firstAt: seen.get(cue.index) },
+      })];
+    }
+    seen.set(cue.index, pos);
+    return [];
+  });
 }
 
 function checkEmptyCue(cue: CaptionCue, preset: CaptionPreset, runId: string): LintFinding[] {

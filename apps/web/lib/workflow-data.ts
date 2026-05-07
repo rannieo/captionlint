@@ -1,7 +1,7 @@
 import { parseCaptionFile, serializeCaptionFile } from "@repo/caption-parser";
 import { defaultVocabularyTerms, getCaptionPreset } from "@repo/config";
 import { applySafeFixes, lintCaptions } from "@repo/lint-engine";
-import type { CaptionFormat, LintRun, PresetId } from "@repo/shared-types";
+import type { CaptionFormat, LintRun, ParserWarning, PresetId } from "@repo/shared-types";
 
 export const workflowStorageKeys = {
   currentRun: "captionlint.currentRun",
@@ -46,7 +46,7 @@ export function createLintRunFromContent(input: {
   presetId: PresetId;
   vocabularyTerms?: string[];
   now?: string;
-}): { run?: LintRun; exportContent?: string; error?: string } {
+}): { run?: LintRun; exportContent?: string; error?: string; parserWarnings?: ParserWarning[] } {
   const parseResult = parseCaptionFile(input.filename, input.content);
   if (parseResult.warnings.some((warning) => warning.code === "UNSUPPORTED_FORMAT")) {
     return { error: "CaptionLint supports .srt and .vtt files for MVP QA." };
@@ -55,17 +55,22 @@ export function createLintRunFromContent(input: {
     return { error: parseResult.warnings[0]?.message ?? "No valid caption cues were found." };
   }
 
+  const structuralWarnings = parseResult.warnings.filter(
+    (w) => w.code !== "UNSUPPORTED_FORMAT" && w.code !== "EMPTY_CUE"
+  );
+
   const preset = getCaptionPreset(input.presetId);
   const run = lintCaptions(parseResult.cues, {
     filename: input.filename,
     format: parseResult.format,
     preset,
     vocabularyTerms: input.vocabularyTerms ?? defaultVocabularyTerms,
+    parserWarnings: structuralWarnings,
     now: input.now,
   });
   const fixedCues = applySafeFixes(run.cues, run.findings);
   const exportContent = serializeCaptionFile(run.format, fixedCues);
-  return { run, exportContent };
+  return { run, exportContent, parserWarnings: structuralWarnings.length > 0 ? structuralWarnings : undefined };
 }
 
 export function createDemoLintRun(): { run: LintRun; exportContent: string } {

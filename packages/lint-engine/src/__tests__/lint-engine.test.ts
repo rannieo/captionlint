@@ -61,4 +61,39 @@ describe("lint engine", () => {
     expect(captionPresets.map((preset) => preset.id)).toEqual(["default", "tiktok", "instagram", "youtube-shorts"]);
     expect(captionPresets.every((preset) => preset.maxLinesPerCue > 0)).toBe(true);
   });
+
+  it("converts MALFORMED_CUE parser warning to STRUCT.MALFORMED_CUE finding", () => {
+    const run = lintCaptions([cue({})], {
+      presetId: "default",
+      parserWarnings: [{ code: "MALFORMED_CUE", message: "Cue is missing a timing line.", cueIndex: 3 }],
+      now: "2026-01-01T00:00:00.000Z",
+    });
+
+    const finding = run.findings.find((f) => f.ruleCode === "STRUCT.MALFORMED_CUE");
+    expect(finding?.severity).toBe("ERROR");
+    expect(finding?.cueIndex).toBe(3);
+  });
+
+  it("converts MALFORMED_TIMESTAMP parser warning to STRUCT.MISSING_TIMESTAMP finding", () => {
+    const run = lintCaptions([cue({})], {
+      presetId: "default",
+      parserWarnings: [{ code: "MALFORMED_TIMESTAMP", message: "Cue has a malformed timestamp range.", cueIndex: 2 }],
+      now: "2026-01-01T00:00:00.000Z",
+    });
+
+    const finding = run.findings.find((f) => f.ruleCode === "STRUCT.MISSING_TIMESTAMP");
+    expect(finding?.severity).toBe("ERROR");
+    expect(finding?.cueIndex).toBe(2);
+  });
+
+  it("detects duplicate cue indexes", () => {
+    const run = lintCaptions(
+      [cue({ index: 1 }), cue({ index: 2, startMs: 3000, endMs: 5000 }), cue({ index: 1, startMs: 6000, endMs: 8000 })],
+      { presetId: "default", now: "2026-01-01T00:00:00.000Z" }
+    );
+
+    const finding = run.findings.find((f) => f.ruleCode === "STRUCT.DUPLICATE_INDEX");
+    expect(finding?.severity).toBe("WARN");
+    expect(finding?.cueIndex).toBe(1);
+  });
 });

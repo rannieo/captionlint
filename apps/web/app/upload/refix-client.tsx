@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
@@ -35,13 +36,19 @@ export function ReFicClient({ runId, initialPreset }: ReFicClientProps) {
   const [error, setError] = useState<string>();
   const [isRunning, setIsRunning] = useState(false);
   const [storedRun, setStoredRun] = useState<{ id: string; file: string; rawContent: string } | null>(null);
+  const [isDemoRun, setIsDemoRun] = useState(false);
 
   useEffect(() => {
     const runs = readHistoryRuns();
     const found = runs.find((r) => r.id === runId);
-    if (!found || !found.rawContent) {
+    if (!found) {
       setError("This run is no longer available. Please upload the file again.");
       setStatus("Run not found in local history.");
+      return;
+    }
+    if (!found.rawContent) {
+      setIsDemoRun(true);
+      setStatus("Demo runs can't be re-fixed — upload the actual file instead.");
       return;
     }
     setStoredRun({ id: found.id, file: found.file, rawContent: found.rawContent });
@@ -122,12 +129,17 @@ export function ReFicClient({ runId, initialPreset }: ReFicClientProps) {
           </div>
         )}
 
-        <div className="flex justify-end">
+        <div className="flex items-center justify-end gap-3">
+          {isDemoRun ? (
+            <Link href="/upload" className="text-sm text-[#22C55E] hover:text-[#4BE277]">
+              Upload file instead
+            </Link>
+          ) : null}
           <Button
             type="button"
             className="bg-[#22C55E] text-[#003915] hover:bg-[#4BE277]"
             onClick={runRefix}
-            disabled={isRunning || !storedRun}
+            disabled={isRunning || !storedRun || isDemoRun}
           >
             {isRunning ? "Running QA..." : "Run QA"}
           </Button>

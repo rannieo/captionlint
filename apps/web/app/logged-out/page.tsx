@@ -4,6 +4,7 @@ import { ShieldCheck } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { PublicPageShell } from "../_components/public-page-shell";
 import { featureFlags } from "@/lib/feature-flags";
+import { SignOutEffect } from "./sign-out-effect";
 
 export const metadata: Metadata = {
   title: "CaptionLint | Logged Out",
@@ -19,6 +20,7 @@ export default function LoggedOutPage() {
       mainClassName="flex min-h-[calc(100vh-8rem)] items-center justify-center pb-12"
     >
       <div className="w-full max-w-sm text-center">
+        <SignOutEffect />
         {/* Icon */}
         <div className="mb-6 flex justify-center">
           <div className="grid size-14 place-items-center rounded-xl border border-[#22C55E33] bg-[#0B1A0B]">

@@ -1,11 +1,13 @@
 "use client";
 
+import Image from "next/image";
 import Link from "next/link";
 import { FormEvent, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
+import { authClient } from "@/lib/auth-client";
 
 export function SignInForm() {
   const router = useRouter();
@@ -35,13 +37,22 @@ export function SignInForm() {
     setError(null);
     setIsSubmitting(true);
 
-    await new Promise((resolve) => setTimeout(resolve, 500));
-    router.push("/dashboard");
+    await authClient.signIn.email(
+      { email, password },
+      {
+        onSuccess: () => router.push("/dashboard"),
+        onError: (ctx) => {
+          setError(ctx.error.message);
+          setIsSubmitting(false);
+        },
+      },
+    );
   }
 
   return (
     <div className="w-full max-w-md">
-      <div className="mb-8 text-center">
+      <div className="mb-8 flex flex-col items-center gap-3">
+        <Image src="/logo.png" alt="CaptionLint" width={48} height={48} className="rounded-xl" />
         <p className="text-2xl font-bold tracking-tight">CaptionLint</p>
       </div>
       <Card className="border-[#1F2937] bg-[#111827]">

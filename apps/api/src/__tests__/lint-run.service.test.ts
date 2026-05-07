@@ -5,6 +5,7 @@ import type { LintQueue } from '../queues/lint-queue.js';
 
 const makeMockRun = (overrides: Partial<LintRunRow> = {}): LintRunRow => ({
   id: 'run-1',
+  assetId: null,
   organizationId: 'org-1',
   userId: 'user-1',
   filename: 'test.srt',
