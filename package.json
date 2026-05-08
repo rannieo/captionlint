@@ -6,7 +6,7 @@
     "build:all": "turbo run build",
     "start": "pnpm run start:web",
     "build:web": "pnpm --filter web build",
-    "start:web": "pnpm --filter web start -- -p ${PORT:-3000} -H 0.0.0.0",
+    "start:web": "pnpm --filter web exec next start -p ${PORT:-3000} -H 0.0.0.0",
     "build:api": "pnpm --filter @captionlint/api build",
     "start:api": "pnpm --filter @captionlint/api start",
     "predeploy:api": "node packages/database/dist/setup.js",
