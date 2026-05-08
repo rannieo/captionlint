@@ -1,7 +1,6 @@
 import { Resend } from "resend";
 import { NextResponse } from "next/server";
 
-const resend = new Resend(process.env.RESEND_API_KEY);
 const TO_EMAIL = process.env.CONTACT_TO_EMAIL ?? "hello@captionlint.com";
 const FROM_EMAIL = process.env.CONTACT_FROM_EMAIL ?? "CaptionLint <noreply@captionlint.com>";
 
@@ -60,6 +59,13 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "All fields are required." }, { status: 422 });
   }
 
+  const resendApiKey = process.env.RESEND_API_KEY;
+  if (!resendApiKey) {
+    console.error("[contact] RESEND_API_KEY is not configured");
+    return NextResponse.json({ error: "Contact form is not configured." }, { status: 500 });
+  }
+
+  const resend = new Resend(resendApiKey);
   const { error } = await resend.emails.send({
     from: FROM_EMAIL,
     to: TO_EMAIL,
