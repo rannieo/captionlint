@@ -22,6 +22,7 @@ import {
 import { readHistoryRuns } from "@/lib/workflow-storage";
 import { mergeAndSortRuns } from "@/lib/history-utils";
 import { authClient } from "@/lib/auth-client";
+import { exportFilename, normalizePresetId, sourceCaptionFilename } from "@/lib/workflow-data";
 import { listHistory, refixHistory, exportLintRun, type HistoryItem } from "@repo/api-client";
 
 const PRESET_LABELS: Record<string, string> = {
@@ -53,7 +54,7 @@ function apiItemToHistoryRun(item: HistoryItem): HistoryRun {
     id: item.id,
     lintRunId: item.lintRunId,
     isApiRun: true,
-    file: item.filename,
+    file: sourceCaptionFilename(item.filename),
     presets: [item.preset],
     date: item.createdAt,
     autoFixed: total - pending,
@@ -135,8 +136,6 @@ export function HistoryClient({ runs }: HistoryClientProps) {
 
   async function downloadHistoryRun(run: HistoryRun) {
     const format = run.format ?? (run.file.toLowerCase().endsWith(".vtt") ? "VTT" : "SRT");
-    const extension = format.toLowerCase();
-    const base = run.file.replace(/\.(srt|vtt)$/i, "");
 
     let content: string;
     if (run.isApiRun && run.lintRunId) {
@@ -157,7 +156,7 @@ export function HistoryClient({ runs }: HistoryClientProps) {
     const url = URL.createObjectURL(blob);
     const link = document.createElement("a");
     link.href = url;
-    link.download = `${base}.captionlint.${extension}`;
+    link.download = exportFilename(run.file, normalizePresetId(run.presets[0]), format);
     link.click();
     URL.revokeObjectURL(url);
   }
@@ -285,7 +284,7 @@ export function HistoryClient({ runs }: HistoryClientProps) {
                                 : "#4b5563",
                             }}
                           />
-                          <span className="font-mono text-sm text-zinc-100">{run.file}</span>
+                          <span className="font-mono text-sm text-zinc-100">{sourceCaptionFilename(run.file)}</span>
                           {run.isDemo && (
                             <span data-demo="true" className="rounded bg-[#1F2937] px-1.5 py-0.5 font-mono text-[10px] text-zinc-500">demo</span>
                           )}

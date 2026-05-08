@@ -1,5 +1,5 @@
 import { parseCaptionFile, serializeCaptionFile } from "@repo/caption-parser";
-import { defaultVocabularyTerms, getCaptionPreset } from "@repo/config";
+import { captionPresets, defaultVocabularyTerms, getCaptionPreset } from "@repo/config";
 import { applySafeFixes, lintCaptions } from "@repo/lint-engine";
 import type { CaptionFormat, LintRun, ParserWarning, PresetId } from "@repo/shared-types";
 
@@ -40,6 +40,17 @@ PT every day.
 00:00:06,000 --> 00:00:07,800
 This cue overlaps the previous cue.`;
 
+export function sourceCaptionFilename(filename: string): string {
+  return filename
+    .trim()
+    .replace(/(?:\.captionlint\.[^.]+)+(?=\.(srt|vtt)$)/i, "");
+}
+
+export function normalizePresetId(value: string | undefined): PresetId {
+  const normalized = value?.trim().toLowerCase().replace(/\s+/g, "-");
+  return captionPresets.find((preset) => preset.id === normalized || preset.label.toLowerCase().replace(/\s+/g, "-") === normalized)?.id ?? "default";
+}
+
 export function createLintRunFromContent(input: {
   filename: string;
   content: string;
@@ -61,7 +72,7 @@ export function createLintRunFromContent(input: {
 
   const preset = getCaptionPreset(input.presetId);
   const run = lintCaptions(parseResult.cues, {
-    filename: input.filename,
+    filename: sourceCaptionFilename(input.filename),
     format: parseResult.format,
     preset,
     vocabularyTerms: input.vocabularyTerms ?? defaultVocabularyTerms,
@@ -93,8 +104,8 @@ export function toStoredHistoryRun(run: LintRun, exportContent: string, rawConte
   const pending = run.summary.warn + run.summary.error;
   return {
     id: run.id,
-    file: run.filename,
-    presets: [getCaptionPreset(run.presetId).label],
+    file: sourceCaptionFilename(run.filename),
+    presets: [run.presetId],
     date: run.finishedAt?.replace("T", " ").slice(0, 19) ?? run.createdAt.replace("T", " ").slice(0, 19),
     autoFixed: run.findings.filter((finding) => finding.suggestedFix?.replacementLines).length,
     pending,
@@ -108,6 +119,6 @@ export function toStoredHistoryRun(run: LintRun, exportContent: string, rawConte
 
 export function exportFilename(filename: string, presetId: PresetId, format: CaptionFormat): string {
   const suffix = format.toLowerCase();
-  const base = filename.replace(/\.(srt|vtt)$/i, "");
+  const base = sourceCaptionFilename(filename).replace(/\.(srt|vtt)$/i, "");
   return `${base}.captionlint.${presetId}.${suffix}`;
 }

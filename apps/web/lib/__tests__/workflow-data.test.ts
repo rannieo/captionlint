@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { createLintRunFromContent, exportFilename, toStoredHistoryRun } from "../workflow-data";
+import { createLintRunFromContent, exportFilename, normalizePresetId, sourceCaptionFilename, toStoredHistoryRun } from "../workflow-data";
 
 const VALID_SRT = `1
 00:00:01,000 --> 00:00:03,000
@@ -33,6 +33,15 @@ describe("createLintRunFromContent", () => {
     expect(result.exportContent).toBeDefined();
     expect(result.error).toBeUndefined();
     expect(result.run?.filename).toBe("sample.srt");
+  });
+
+  it("strips prior CaptionLint export suffixes from the run filename", () => {
+    const result = createLintRunFromContent({
+      filename: "demo-captionlint.captionlint.youtube-shorts.captionlint.instagram.srt",
+      content: VALID_SRT,
+      presetId: "default",
+    });
+    expect(result.run?.filename).toBe("demo-captionlint.srt");
   });
 
   it("is deterministic for a fixed now timestamp", () => {
@@ -95,5 +104,27 @@ describe("exportFilename", () => {
 
   it("produces base.captionlint.presetId.vtt for VTT files", () => {
     expect(exportFilename("sub.vtt", "instagram", "VTT")).toBe("sub.captionlint.instagram.vtt");
+  });
+
+  it("does not stack CaptionLint suffixes across repeated exports", () => {
+    expect(
+      exportFilename(
+        "demo-captionlint.captionlint.youtube-shorts.captionlint.instagram.captionlint.default.srt",
+        "default",
+        "SRT",
+      ),
+    ).toBe("demo-captionlint.captionlint.default.srt");
+  });
+});
+
+describe("sourceCaptionFilename", () => {
+  it("preserves a source basename that includes captionlint", () => {
+    expect(sourceCaptionFilename("demo-captionlint.captionlint.youtube-shorts.srt")).toBe("demo-captionlint.srt");
+  });
+});
+
+describe("normalizePresetId", () => {
+  it("accepts stored labels from old local history runs", () => {
+    expect(normalizePresetId("YouTube Shorts")).toBe("youtube-shorts");
   });
 });

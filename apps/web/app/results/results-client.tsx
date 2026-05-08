@@ -5,7 +5,7 @@ import posthog from "posthog-js";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
-import { createDemoLintRun, createLintRunFromContent, exportFilename } from "@/lib/workflow-data";
+import { createDemoLintRun, createLintRunFromContent, exportFilename, normalizePresetId } from "@/lib/workflow-data";
 import { readCurrentRun, readHistoryRuns } from "@/lib/workflow-storage";
 import { defaultVocabularyTerms } from "@repo/config";
 import type { PresetId } from "@repo/shared-types";
@@ -48,7 +48,7 @@ export function ResultsClient({ runId, localRunId, fallbackRun, fallbackExportCo
         const result = createLintRunFromContent({
           filename: stored.file,
           content: stored.rawContent,
-          presetId: (stored.presets[0] ?? "default") as PresetId,
+          presetId: normalizePresetId(stored.presets[0]),
           vocabularyTerms: defaultVocabularyTerms,
         });
         if (result.run && result.exportContent) {
@@ -108,6 +108,8 @@ export function ResultsClient({ runId, localRunId, fallbackRun, fallbackExportCo
   return (
     <>
       <WorkspaceTopbar
+        showShare={false}
+        showExport={false}
         left={
           <>
             <span className="font-mono text-sm font-semibold text-zinc-100">{run.filename}</span>
@@ -120,7 +122,7 @@ export function ResultsClient({ runId, localRunId, fallbackRun, fallbackExportCo
           </>
         }
       />
-      <div className="fixed left-0 right-0 top-12 z-30 flex flex-wrap items-center gap-3 border-b border-[#1E293B] bg-[#111112] px-4 py-3 md:left-[280px] md:gap-6 md:px-6">
+      <div className="sticky top-12 z-30 mt-12 flex flex-wrap items-center gap-3 border-b border-[#1E293B] bg-[#111112] px-4 py-3 md:gap-6 md:px-6">
         <SeverityMetric severity="PASS" value={run.summary.pass} label="checks passed" />
         <SeverityMetric severity="WARN" value={run.summary.warn} label="review suggested" />
         <SeverityMetric severity="ERROR" value={run.summary.error} label="blocking issues" />
@@ -140,13 +142,13 @@ export function ResultsClient({ runId, localRunId, fallbackRun, fallbackExportCo
         </div>
       </div>
 
-      <div className="mt-[88px] flex h-[calc(100vh-88px)] flex-col overflow-hidden md:flex-row">
-        <aside data-findings-panel className="flex h-full w-full flex-col border-b border-[#1E293B] bg-[#111112] md:w-[360px] md:shrink-0 md:border-b-0 md:border-r">
+      <div className="flex flex-col md:h-[calc(100vh-104px)] md:overflow-hidden md:flex-row">
+        <aside data-findings-panel className="flex w-full flex-col border-b border-[#1E293B] bg-[#111112] md:h-full md:w-[360px] md:shrink-0 md:border-b-0 md:border-r">
           <div className="flex items-center justify-between border-b border-[#1E293B] p-4">
             <h2 className="text-base font-semibold tracking-tight text-zinc-100 md:text-lg">Findings</h2>
             <span className="font-mono text-xs text-zinc-500">{filteredFindings.length} shown</span>
           </div>
-          <div className="flex-1 overflow-y-auto">
+          <div className="md:flex-1 md:overflow-y-auto">
             {filteredFindings.map((finding) => (
               <FindingRow
                 key={finding.id}
@@ -164,11 +166,13 @@ export function ResultsClient({ runId, localRunId, fallbackRun, fallbackExportCo
         </aside>
 
         <section className="flex min-h-[50vh] flex-1 flex-col bg-[#0A0A0B] md:min-h-0">
-          <div className="flex h-10 items-center justify-between border-b border-[#1E293B] bg-[#111112] px-4">
-            <div className="font-mono text-xs text-zinc-500">{run.filename}</div>
-            <div className="font-mono text-xs text-zinc-500">engine {run.engineVersion}</div>
+          <div className="flex h-10 items-center justify-between gap-3 border-b border-[#1E293B] bg-[#111112] px-4">
+            <div className="min-w-0 truncate font-mono text-xs text-zinc-500" title={run.filename}>
+              {run.filename}
+            </div>
+            <div className="shrink-0 font-mono text-xs text-zinc-500">engine {run.engineVersion}</div>
           </div>
-          <div className="flex-1 overflow-y-auto p-4 font-mono text-[13px] leading-relaxed text-zinc-300">
+          <div className="p-4 font-mono text-[13px] leading-relaxed text-zinc-300 md:flex-1 md:overflow-y-auto">
             {run.cues.map((cue) => {
               const isActive = cue.index === activeCueIndex;
               const cueFindings = run.findings.filter((finding) => finding.cueIndex === cue.index);

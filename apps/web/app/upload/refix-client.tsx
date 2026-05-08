@@ -14,7 +14,7 @@ import {
 } from "@/components/ui/select";
 import { defaultVocabularyTerms } from "@repo/config";
 import type { PresetId } from "@repo/shared-types";
-import { createLintRunFromContent, toStoredHistoryRun } from "@/lib/workflow-data";
+import { createLintRunFromContent, sourceCaptionFilename, toStoredHistoryRun } from "@/lib/workflow-data";
 import { prependHistoryRun, readHistoryRuns, readVocabularyTerms, writeCurrentRun } from "@/lib/workflow-storage";
 
 const presets: Array<{ label: string; value: PresetId }> = [
@@ -51,8 +51,9 @@ export function ReFicClient({ runId, initialPreset }: ReFicClientProps) {
       setStatus("Demo runs can't be re-fixed — upload the actual file instead.");
       return;
     }
-    setStoredRun({ id: found.id, file: found.file, rawContent: found.rawContent });
-    setStatus(`Ready to re-fix ${found.file} with a different preset.`);
+    const sourceFile = sourceCaptionFilename(found.file);
+    setStoredRun({ id: found.id, file: sourceFile, rawContent: found.rawContent });
+    setStatus(`Ready to re-fix ${sourceFile} with a different preset.`);
   }, [runId]);
 
   const selectedPresetLabel = useMemo(
