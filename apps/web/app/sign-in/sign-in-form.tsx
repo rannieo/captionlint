@@ -8,6 +8,7 @@ import posthog from "posthog-js";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
+import { getAuthErrorMessage, validateSignInInput } from "@/lib/auth-form-utils";
 import { authClient } from "@/lib/auth-client";
 
 export function SignInForm() {
@@ -19,23 +20,19 @@ export function SignInForm() {
   const [oauthLoading, setOauthLoading] = useState<"github" | "google" | null>(null);
 
   async function handleOAuth(provider: "github" | "google") {
+    setError(null);
     setOauthLoading(provider);
-    await authClient.signIn.social({ provider, callbackURL: `${window.location.origin}/dashboard` });
-  }
-
-  function validateForm(): string | null {
-    if (!email.includes("@")) {
-      return "Enter a valid email address.";
+    try {
+      await authClient.signIn.social({ provider, callbackURL: `${window.location.origin}/dashboard` });
+    } catch (err) {
+      setError(getAuthErrorMessage(err));
+      setOauthLoading(null);
     }
-    if (password.length < 8) {
-      return "Password must be at least 8 characters.";
-    }
-    return null;
   }
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    const validationError = validateForm();
+    const validationError = validateSignInInput({ email, password });
     if (validationError) {
       setError(validationError);
       return;
@@ -44,20 +41,24 @@ export function SignInForm() {
     setError(null);
     setIsSubmitting(true);
 
-    await authClient.signIn.email(
-      { email, password },
-      {
-        onSuccess: (ctx) => {
-          posthog.identify(ctx.data.user.id, { email: ctx.data.user.email, name: ctx.data.user.name });
-          posthog.capture("user_signed_in", { method: "email" });
-          router.push("/dashboard");
-        },
-        onError: (ctx) => {
-          setError(ctx.error.message);
-          setIsSubmitting(false);
-        },
-      },
-    );
+    try {
+      const { data, error } = await authClient.signIn.email({ email, password });
+
+      if (error) {
+        setError(getAuthErrorMessage(error.message));
+        setIsSubmitting(false);
+        return;
+      }
+
+      if (data?.user) {
+        posthog.identify(data.user.id, { email: data.user.email, name: data.user.name });
+      }
+      posthog.capture("user_signed_in", { method: "email" });
+      router.push("/dashboard");
+    } catch (err) {
+      setError(getAuthErrorMessage(err));
+      setIsSubmitting(false);
+    }
   }
 
   return (
@@ -74,7 +75,7 @@ export function SignInForm() {
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
-          <form className="space-y-4" onSubmit={handleSubmit}>
+          <form className="space-y-4" onSubmit={handleSubmit} noValidate>
             <div className="space-y-2">
               <label htmlFor="email" className="text-sm text-zinc-400">
                 Email Address
@@ -83,10 +84,12 @@ export function SignInForm() {
                 id="email"
                 type="email"
                 value={email}
-                onChange={(event) => setEmail(event.target.value)}
+                onValueChange={setEmail}
                 placeholder="name@company.com"
                 className="border-[#1F2937] bg-[#0B0F14]"
                 autoComplete="email"
+                disabled={isSubmitting || oauthLoading !== null}
+                aria-invalid={error?.toLowerCase().includes("email") ?? false}
               />
             </div>
             <div className="space-y-2">
@@ -102,16 +105,26 @@ export function SignInForm() {
                 id="password"
                 type="password"
                 value={password}
-                onChange={(event) => setPassword(event.target.value)}
+                onValueChange={setPassword}
                 placeholder="••••••••"
                 className="border-[#1F2937] bg-[#0B0F14]"
                 autoComplete="current-password"
+                disabled={isSubmitting || oauthLoading !== null}
+                aria-invalid={error?.toLowerCase().includes("password") ?? false}
               />
             </div>
 
-            {error ? <p className="text-xs text-[#ef4444]">{error}</p> : null}
+            {error ? (
+              <p role="alert" aria-live="polite" className="text-xs text-[#ef4444]">
+                {error}
+              </p>
+            ) : null}
 
-            <Button className="h-10 w-full bg-[#22C55E] text-[#003915] hover:bg-[#4BE277]" disabled={isSubmitting}>
+            <Button
+              type="submit"
+              className="h-10 w-full bg-[#22C55E] text-[#003915] hover:bg-[#4BE277]"
+              disabled={isSubmitting || oauthLoading !== null}
+            >
               {isSubmitting ? "Signing In..." : "Sign In"}
             </Button>
           </form>

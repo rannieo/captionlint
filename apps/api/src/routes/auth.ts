@@ -1,6 +1,7 @@
 import type { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
 import { fromNodeHeaders } from 'better-auth/node';
 import { auth } from '../auth.js';
+import { buildAuthRequestUrl } from '../config/auth-runtime.js';
 
 export async function authRoute(fastify: FastifyInstance) {
   fastify.route({
@@ -8,7 +9,7 @@ export async function authRoute(fastify: FastifyInstance) {
     url: '/api/auth/*',
     async handler(request: FastifyRequest, reply: FastifyReply) {
       try {
-        const url = new URL(request.url, `http://${request.headers.host}`);
+        const url = buildAuthRequestUrl(request.url, request.headers);
         const headers = fromNodeHeaders(request.headers);
         const req = new Request(url.toString(), {
           method: request.method,

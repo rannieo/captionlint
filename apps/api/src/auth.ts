@@ -2,12 +2,13 @@ import { betterAuth } from 'better-auth';
 import { drizzleAdapter } from 'better-auth/adapters/drizzle';
 import { organization as organizationPlugin } from 'better-auth/plugins';
 import { db } from './db/index.js';
+import { getTrustedOrigins, resolveAuthBaseURL } from './config/auth-runtime.js';
 import { organization, member } from '@repo/database/schema';
 
 export const auth = betterAuth({
   secret: process.env.BETTER_AUTH_SECRET ?? 'captionlint-dev-secret-change-in-production',
-  baseURL: process.env.BETTER_AUTH_URL ?? 'http://localhost:4000',
-  trustedOrigins: process.env.ALLOWED_ORIGINS?.split(',') ?? ['http://localhost:3000'],
+  baseURL: resolveAuthBaseURL(),
+  trustedOrigins: getTrustedOrigins(),
   database: drizzleAdapter(db, { provider: 'pg' }),
   emailAndPassword: { enabled: true },
   socialProviders: {

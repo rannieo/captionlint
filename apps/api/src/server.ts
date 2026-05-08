@@ -9,11 +9,12 @@ import { vocabularyRoute } from './routes/vocabulary.js';
 import { assetsRoute } from './routes/assets.js';
 import { historyRoute } from './routes/history.js';
 import { rulesetsRoute } from './routes/rulesets.js';
+import { getTrustedOrigins } from './config/auth-runtime.js';
 
 const fastify = Fastify({ logger: true });
 
 await fastify.register(cors, {
-  origin: process.env.ALLOWED_ORIGINS?.split(',') ?? ['http://localhost:3000'],
+  origin: getTrustedOrigins(),
   credentials: true,
 });
 
