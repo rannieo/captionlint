@@ -2,7 +2,8 @@
   "name": "captionlint-v2",
   "private": true,
   "scripts": {
-    "build": "turbo run build",
+    "build": "pnpm run build:web",
+    "build:all": "turbo run build",
     "start": "pnpm run start:web",
     "build:web": "pnpm --filter web build",
     "start:web": "pnpm --filter web start -- -p ${PORT:-3000} -H 0.0.0.0",
@@ -30,6 +31,6 @@
   },
   "packageManager": "pnpm@9.0.0",
   "engines": {
-    "node": ">=18"
+    "node": ">=22.12.0"
   }
 }
