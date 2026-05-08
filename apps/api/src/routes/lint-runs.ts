@@ -6,10 +6,10 @@ import { DrizzleLintRunRepository } from '../repositories/lint-run.repository.js
 import { LintQueue } from '../queues/lint-queue.js';
 import { requireAuth } from '../plugins/auth-plugin.js';
 import { db } from '../db/index.js';
-import { exports as exportsTable, findings } from '@repo/database/schema';
+import { assets, exports as exportsTable, findings, lintRuns } from '@repo/database/schema';
 import { parseCaptionFile, serializeCaptionFile } from '@repo/caption-parser';
 import { applySafeFixes } from '@repo/lint-engine';
-import type { LintFinding, CaptionCue, SuggestedFix } from '@repo/shared-types';
+import type { LintFinding, CaptionCue, LintRun, SuggestedFix } from '@repo/shared-types';
 
 const createSchema = z.object({
   filename: z.string(),
@@ -65,7 +65,9 @@ export async function lintRunsRoute(fastify: FastifyInstance) {
     async (request, reply) => {
       const result = await service.getById(request.params.id);
       if (!result.ok) return reply.status(404).send({ error: 'Lint run not found' });
-      return reply.send(result.value);
+      const run = result.value;
+      const cues = await resolveRunCues(run);
+      return reply.send({ ...run, cues });
     },
   );
 
@@ -143,4 +145,29 @@ export async function lintRunsRoute(fastify: FastifyInstance) {
       return reply.send({ deleted: true });
     },
   );
+}
+
+async function resolveRunCues(run: { id: string; assetId: string | null; filename: string; format: string; cues: unknown; exportContent: string | null }): Promise<LintRun['cues']> {
+  if (Array.isArray(run.cues) && run.cues.length > 0) {
+    return run.cues as LintRun['cues'];
+  }
+
+  let content: string | undefined;
+  if (run.assetId) {
+    const [asset] = await db
+      .select({ content: assets.content, filename: assets.filename })
+      .from(assets)
+      .where(eq(assets.id, run.assetId));
+    content = asset?.content;
+  }
+
+  content ??= run.exportContent ?? undefined;
+  if (!content) return [];
+
+  const parsed = parseCaptionFile(run.filename, content);
+  if (parsed.cues.length > 0) {
+    await db.update(lintRuns).set({ cues: parsed.cues }).where(eq(lintRuns.id, run.id));
+  }
+
+  return parsed.cues;
 }

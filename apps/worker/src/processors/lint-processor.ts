@@ -68,7 +68,7 @@ export async function lintProcessor(job: Job<LintJobData>): Promise<void> {
     await db.transaction(async (tx) => {
       // Update lint run
       await tx.update(lintRuns)
-        .set({ status: finalStatus, summary: run.summary, finishedAt: new Date(), exportContent })
+        .set({ status: finalStatus, summary: run.summary, cues: run.cues, finishedAt: new Date(), exportContent })
         .where(eq(lintRuns.id, runId));
 
       // Insert findings
